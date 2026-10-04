@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>疑似カジノ</title>
+<style>
+  #onlinePlayersList button:hover { border-color:var(--gold) !important; }
+
+  :root {
+    --bg:#0b0f14; --panel:#161c24; --line:#2a3644; --gold:#e0b84a; --red:#c23b3b; --green:#2f8f5b;
+    --text:#e8ecf0; --dim:#8a97a6;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { height:100%; background:var(--bg); color:var(--text); font-family:'Segoe UI','Hiragino Kaku Gothic ProN',sans-serif; overflow-x:hidden; display:flex; align-items:flex-start; justify-content:center; }
+  #wrap { width:480px; max-width:100vw; padding:14px 14px 40px; }
+  h1 { text-align:center; font-size:20px; letter-spacing:3px; color:var(--gold); margin-bottom:10px; text-shadow:0 0 12px rgba(224,184,74,.35); }
+  #balanceBar { display:flex; justify-content:space-between; align-items:center; background:var(--panel); border:1px solid var(--line); padding:10px 14px; border-radius:10px; margin-bottom:10px; }
+  #balanceBar .lbl { font-size:11px; color:var(--dim); letter-spacing:1px; }
+  #balanceVal { font-size:22px; font-weight:bold; color:var(--gold); }
+  #freeChipBtn { padding:8px 14px; background:rgba(47,143,91,.15); border:1px solid var(--green); color:#a8ffcf; border-radius:8px; font-size:11px; cursor:pointer; letter-spacing:1px; }
+  #freeChipBtn:disabled { opacity:.4; cursor:default; border-color:var(--line); color:var(--dim); background:transparent; }
+  #borrowBtn { padding:8px 14px; background:rgba(194,59,59,.15); border:1px solid var(--red); color:#ffb0b0; border-radius:8px; font-size:11px; cursor:pointer; letter-spacing:1px; }
+  #borrowBtn:disabled { opacity:.4; cursor:default; border-color:var(--line); color:var(--dim); background:transparent; }
+  #tabs { display:flex; gap:8px; margin-bottom:12px; }
+  .tabBtn { flex:1; padding:10px 0; text-align:center; background:var(--panel); border:1px solid var(--line); border-radius:8px; cursor:pointer; font-size:13px; letter-spacing:2px; color:var(--dim); }
+  .tabBtn.active { color:var(--gold); border-color:var(--gold); background:rgba(224,184,74,.08); }
+  .page { display:none; }
+  .page.active { display:block; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:12px; }
+  .betRow { display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .betRow label { font-size:11px; color:var(--dim); letter-spacing:1px; white-space:nowrap; }
+  .betRow input[type=number] { width:110px; padding:8px 10px; background:#0e1319; border:1px solid var(--line); color:var(--text); border-radius:6px; font-size:14px; }
+  .chipQuick { display:flex; gap:6px; flex-wrap:wrap; }
+  .chipQuick button { padding:5px 10px; background:#0e1319; border:1px solid var(--line); color:var(--dim); border-radius:6px; font-size:11px; cursor:pointer; }
+  .chipQuick button:hover { border-color:var(--gold); color:var(--gold); }
+  .bigBtn { width:100%; padding:13px 0; background:linear-gradient(180deg,#e0b84a,#c99a2e); border:none; color:#241c08; font-weight:bold; font-size:15px; letter-spacing:3px; border-radius:8px; cursor:pointer; margin-top:4px; }
+  .bigBtn:disabled { opacity:.4; cursor:default; background:#3a3a3a; color:#777; }
+  /* SLOT */
+  #reels { display:flex; gap:8px; justify-content:center; margin:10px 0 16px; }
+  .reelWindow { width:90px; height:100px; background:#0e1319; border:2px solid var(--line); border-radius:8px; overflow:hidden; position:relative; }
+  .reelStrip { position:absolute; left:0; top:0; width:100%; display:flex; flex-direction:column; align-items:center; transition: none; }
+  .reelStrip .sym { height:100px; display:flex; align-items:center; justify-content:center; font-size:52px; }
+  #slotResult { text-align:center; font-size:14px; min-height:22px; margin-bottom:6px; letter-spacing:1px; }
+  #payTable { font-size:10px; color:var(--dim); line-height:1.8; margin-top:10px; }
+  #payTable b { color:var(--text); }
+  /* ROULETTE */
+  #wheelWrap { display:flex; justify-content:center; margin:6px 0 16px; position:relative; }
+  #wheelCanvas { border-radius:50%; box-shadow:0 0 0 4px #2a3644, 0 0 30px rgba(0,0,0,.5); }
+  #ballMarker { position:absolute; top:-6px; left:50%; width:0; height:0; border-left:8px solid transparent; border-right:8px solid transparent; border-top:14px solid var(--gold); transform:translateX(-50%); }
+  #rouletteResult { text-align:center; font-size:16px; min-height:24px; margin-bottom:10px; letter-spacing:1px; }
+  #betGrid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; margin-bottom:12px; }
+  .numCell { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:11px; border-radius:5px; cursor:pointer; border:1px solid var(--line); color:var(--text); position:relative; }
+  .numCell.red { background:rgba(194,59,59,.35); }
+  .numCell.black { background:rgba(30,30,30,.6); }
+  .numCell.zero { background:rgba(47,143,91,.4); grid-column:span 6; }
+  .numCell.selected { outline:2px solid var(--gold); }
+  .numCell .chipDot { position:absolute; bottom:2px; right:2px; width:8px; height:8px; background:var(--gold); border-radius:50%; }
+  #outsideBets { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:10px; }
+  #outsideBets2 { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:12px; }
+  .outBtn { padding:10px 4px; text-align:center; border:1px solid var(--line); border-radius:6px; cursor:pointer; font-size:11px; letter-spacing:1px; color:var(--text); position:relative; }
+  .outBtn.selected { outline:2px solid var(--gold); }
+  .outBtn.red { background:rgba(194,59,59,.2); }
+  .outBtn.black { background:rgba(30,30,30,.5); }
+  #selectedBetInfo { font-size:11px; color:var(--dim); margin-bottom:8px; min-height:16px; }
+  #clearBetsBtn { padding:6px 12px; font-size:10px; background:transparent; border:1px solid var(--line); color:var(--dim); border-radius:6px; cursor:pointer; margin-bottom:8px; }
+  .sub { font-size:10.5px; color:var(--dim); line-height:1.6; margin-top:8px; }
+
+  /* KEIBA */
+  #horseTrack { background:#10251a; border:1px solid #315c40; border-radius:12px; padding:12px; overflow:hidden; }
+  .horseLane { position:relative; height:48px; margin:7px 0; background:linear-gradient(90deg,#254b32,#183523); border:1px solid #356b48; border-radius:8px; overflow:hidden; }
+  .horseLane::after { content:""; position:absolute; right:8px; top:0; bottom:0; width:4px; background:#e0b84a; opacity:.8; }
+  .horse { position:absolute; left:4px; top:4px; width:40px; height:40px; display:grid; place-items:center; font-size:28px; transition:transform .08s linear; z-index:2; }
+  .horseName { position:absolute; left:48px; top:15px; font-size:11px; color:#d9f4df; z-index:1; }
+  #horseRaceStatus { text-align:center; font-weight:bold; color:#e0b84a; margin:10px 0; min-height:20px; }
+  #horseResult { text-align:center; margin-top:10px; min-height:24px; }
+  .horseChoices { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin:10px 0; }
+  .horseChoice { padding:9px 4px; background:#0e1319; border:1px solid var(--line); color:var(--text); border-radius:7px; cursor:pointer; font-size:11px; }
+  .horseChoice.selected { border-color:var(--gold); color:var(--gold); background:rgba(224,184,74,.1); }
+  #horseLapInfo { text-align:center; color:var(--dim); font-size:11px; margin-bottom:8px; }
+
+
+  /* Mobile stability layer: layout/interaction only; game rules are unchanged */
+  html { min-height:100%; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  body { min-height:100dvh; min-height:100vh; width:100%; overscroll-behavior-x:none; -webkit-tap-highlight-color:transparent; }
+  button, input, select, textarea { touch-action:manipulation; }
+  button { -webkit-appearance:none; }
+  input, button, select, textarea { font-family:inherit; }
+  #wrap { width:min(480px,100%); max-width:none; padding-left:max(12px,env(safe-area-inset-left)); padding-right:max(12px,env(safe-area-inset-right)); padding-bottom:max(40px,calc(24px + env(safe-area-inset-bottom))); }
+  #tabs { overflow-x:auto; overflow-y:hidden; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
+  #tabs::-webkit-scrollbar { display:none; }
+  .tabBtn { flex:0 0 112px; min-height:44px; display:flex; align-items:center; justify-content:center; white-space:nowrap; }
+  #balanceBar { gap:10px; }
+  #balanceBar > div:last-child { min-width:0; }
+  #freeChipBtn,#borrowBtn,.bigBtn,#connectPeerBtn,#transferBtn,#adminOpenBtn,#adminLoginBtn,#applySettingsBtn,#adminGiveBtn,#adminGiveAllBtn,#eventStartBtn,#eventEndBtn,#lotteryStartBtn,#adminResetBalanceBtn,#marketListBtn,#auctionListBtn { min-height:44px; }
+  input,select,textarea { max-width:100%; }
+  #reels { gap:clamp(4px,2vw,8px); }
+  .reelWindow { width:clamp(72px,27vw,90px); height:clamp(82px,30vw,100px); }
+  .reelStrip .sym { height:clamp(82px,30vw,100px); font-size:clamp(42px,14vw,52px); }
+  #wheelCanvas { width:min(260px,78vw); height:auto; max-width:100%; }
+  #wheelWrap { width:100%; }
+  #betGrid { grid-template-columns:repeat(6,minmax(0,1fr)); }
+  .numCell { min-width:0; min-height:42px; }
+  .outBtn,.horseChoice { min-height:44px; display:flex; align-items:center; justify-content:center; }
+  #networkAdminPanel,.panel { min-width:0; }
+  #onlinePlayersList button { min-height:44px; }
+  audio,video,img { max-width:100%; }
+  #myPeerId,#connectionStatus,#transferLog,#marketStatus,#auctionStatus,#adminStatus,#selectedBetInfo,#horseRaceStatus,#horseResult,#lotteryResult { overflow-wrap:anywhere; word-break:break-word; }
+  @media (max-width:380px) {
+    #wrap { padding-left:10px; padding-right:10px; }
+    h1 { font-size:18px; letter-spacing:2px; }
+    #balanceBar { align-items:stretch; }
+    #balanceBar .lbl { letter-spacing:.5px; }
+    #balanceVal { font-size:20px; }
+    #freeChipBtn,#borrowBtn { padding-left:9px; padding-right:9px; font-size:10px; }
+    .panel { padding:12px; }
+    .betRow input[type=number] { width:96px; }
+    .tabBtn { flex-basis:104px; }
+  }
+  @media (max-width:340px) {
+    #balanceBar { flex-direction:column; }
+    #balanceBar > div:last-child { align-items:stretch !important; }
+    #freeChipBtn,#borrowBtn { width:100%; }
+    .betRow { gap:6px; }
+  }
+  @media (pointer:coarse) { .chipQuick button,#clearBetsBtn { min-height:40px; } }
+
+</style>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+</head>
+<body>
+<div id="wrap">
+  <h1>♠ 疑似カジノ ♠</h1>
+  <div id="globalSyncStatus" style="font-size:10px;text-align:center;color:#8fd3ff;margin:-4px 0 9px;">🌐 P2P全体同期：接続準備中…</div>
+  <div id="globalEventBanner" class="panel" style="display:none;padding:11px;border-color:#eab308;background:rgba(234,179,8,.07);">
+    <div style="font-weight:bold;color:#ffe88a;">🎉 <span id="globalEventName">イベント</span></div>
+    <div id="globalEventInfo" style="font-size:11px;color:var(--dim);margin-top:4px;"></div>
+    <div id="globalEventTimer" style="font-size:20px;text-align:center;font-weight:bold;margin-top:5px;"></div>
+  </div>
+  <div id="balanceBar">
+    <div><div class="lbl">所持チップ</div><div id="balanceVal">0</div><div class="lbl" id="debtLbl" style="display:none;color:var(--red);margin-top:2px;">借金: <span id="debtVal">0</span> / 1000</div></div>
+    <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+      <button id="freeChipBtn">無料チップ +300</button>
+      <button id="borrowBtn">借金する (+500)</button>
+    </div>
+  </div>
+
+  <section id="networkAdminPanel" style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;">
+    <div style="font-size:12px;color:var(--gold);letter-spacing:1px;margin-bottom:8px;font-weight:bold;">💸 ネット送金 / 🛠 管理者パネル</div>
+    <div style="display:grid;gap:7px;">
+      <input id="playerNameInput" placeholder="自分の名前" style="padding:9px;border-radius:7px;border:1px solid var(--line);background:#0f141b;color:var(--text);">
+      <div style="font-size:11px;color:var(--dim);">自分の送金ID：<b id="myPeerId">接続中…</b></div>
+      <input id="peerNameInput" placeholder="相手の送金ID（オンライン一覧から自動入力可）" style="padding:9px;border-radius:7px;border:1px solid var(--line);background:#0f141b;color:var(--text);">
+      <button id="connectPeerBtn" style="padding:9px;border-radius:7px;border:1px solid var(--gold);background:#2a2413;color:#ffe9a3;cursor:pointer;">送金IDで接続</button>
+      <div id="connectionStatus" style="font-size:11px;color:var(--dim);">未接続</div>
+      <input id="transferAmountInput" type="number" min="1" step="1" placeholder="送金額" style="padding:9px;border-radius:7px;border:1px solid var(--line);background:#0f141b;color:var(--text);">
+      <button id="transferBtn" style="padding:9px;border-radius:7px;border:1px solid #4aa3ff;background:#12263b;color:#bfe2ff;cursor:pointer;">💸 送金</button>
+      <div id="transferLog" style="font-size:11px;color:var(--dim);min-height:18px;"></div>
+      <div style="margin-top:6px;border-top:1px solid var(--line);padding-top:9px;">
+        <div style="font-size:12px;color:#8fd3ff;font-weight:bold;margin-bottom:6px;">🟢 オンライン一覧</div>
+        <div id="onlinePlayersList" style="display:grid;gap:5px;"></div>
+        <div id="onlinePlayersStatus" style="font-size:10px;color:var(--dim);margin-top:5px;">オンライン：0人</div>
+      </div>
+      <button id="adminOpenBtn" style="padding:9px;border-radius:7px;border:1px solid #a855f7;background:#241333;color:#e9c8ff;cursor:pointer;">🛠 管理者パネルを開く</button>
+      <div id="adminPanel" style="display:none;border-top:1px solid var(--line);padding-top:10px;">
+        <div style="display:grid;gap:7px;">
+          <input id="adminPasswordInput" type="password" placeholder="管理者パスワード" style="padding:9px;border-radius:7px;border:1px solid var(--line);background:#0f141b;color:var(--text);">
+          <button id="adminLoginBtn" style="padding:9px;border-radius:7px;border:1px solid #a855f7;background:#321748;color:#f1ddff;cursor:pointer;">管理者ログイン</button>
+          <div id="adminControls" style="display:none;">
+            <div style="font-size:12px;color:#e9c8ff;margin:8px 0;">ゲーム全体設定</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+              <label style="font-size:10px;color:var(--dim);">初期チップ<input id="setStartingBalance" type="number" min="0" style="width:100%;padding:7px;margin-top:3px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;"></label>
+              <label style="font-size:10px;color:var(--dim);">無料チップ量<input id="setFreeChipAmount" type="number" min="0" style="width:100%;padding:7px;margin-top:3px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;"></label>
+              <label style="font-size:10px;color:var(--dim);">無料チップ間隔(秒)<input id="setFreeChipInterval" type="number" min="1" style="width:100%;padding:7px;margin-top:3px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;"></label>
+              <label style="font-size:10px;color:var(--dim);">借金上限<input id="setDebtMax" type="number" min="0" style="width:100%;padding:7px;margin-top:3px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;"></label>
+              <label style="font-size:10px;color:var(--dim);">1回の借入額<input id="setBorrowAmount" type="number" min="0" style="width:100%;padding:7px;margin-top:3px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;"></label>
+              <label style="font-size:10px;color:var(--dim);">利益から返済する割合(%)<input id="setRepayRatio" type="number" min="0" max="100" style="width:100%;padding:7px;margin-top:3px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;"></label>
+            </div>
+            <div style="display:grid;gap:7px;margin-top:8px;">
+              <button id="applySettingsBtn" style="padding:9px;border-radius:7px;border:1px solid #22c55e;background:#12351f;color:#b8ffd0;cursor:pointer;">設定を適用</button>
+              <div style="font-size:12px;color:#e9c8ff;margin-top:4px;">管理者チップ配布（管理者の残高は減りません）</div>
+              <input id="adminTargetName" placeholder="指定プレイヤーの送金ID" style="padding:9px;border-radius:7px;border:1px solid var(--line);background:#0f141b;color:var(--text);">
+              <input id="adminGiveAmount" type="number" min="1" step="1" placeholder="与える金額" style="padding:9px;border-radius:7px;border:1px solid var(--line);background:#0f141b;color:var(--text);">
+              <button id="adminGiveBtn" style="padding:9px;border-radius:7px;border:1px solid #f59e0b;background:#3a2910;color:#ffe1a3;cursor:pointer;">👑 指定IDにチップを与える</button>
+              <button id="adminGiveAllBtn" style="padding:9px;border-radius:7px;border:1px solid #22c55e;background:#12351f;color:#b8ffd0;cursor:pointer;">👑 全オンラインプレイヤー＋管理者に配布</button>
+              <div style="font-size:12px;color:#e9c8ff;margin-top:10px;">🎉 イベント設定</div>
+              <input id="eventNameInput" placeholder="イベント名" style="padding:9px;border-radius:7px;border:1px solid var(--line);background:#0f141b;color:var(--text);">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+                <label style="font-size:10px;color:var(--dim);">開始日時<input id="eventStartInput" type="datetime-local" style="width:100%;padding:7px;margin-top:3px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;"></label>
+                <label style="font-size:10px;color:var(--dim);">終了日時<input id="eventEndInput" type="datetime-local" style="width:100%;padding:7px;margin-top:3px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;"></label>
+                <label style="font-size:10px;color:var(--dim);">倍率<input id="eventMultiplierInput" type="number" min="1" step="0.1" value="2" style="width:100%;padding:7px;margin-top:3px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;"></label>
+                <label style="font-size:10px;color:var(--dim);">1位賞金<input id="eventPrize1Input" type="number" min="0" value="10000" style="width:100%;padding:7px;margin-top:3px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;"></label>
+                <label style="font-size:10px;color:var(--dim);">2位賞金<input id="eventPrize2Input" type="number" min="0" value="5000" style="width:100%;padding:7px;margin-top:3px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;"></label>
+                <label style="font-size:10px;color:var(--dim);">3位賞金<input id="eventPrize3Input" type="number" min="0" value="2500" style="width:100%;padding:7px;margin-top:3px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;"></label>
+              </div>
+              <button id="eventStartBtn" style="padding:9px;border-radius:7px;border:1px solid #eab308;background:#3a2e08;color:#ffe88a;cursor:pointer;">🎉 イベントを設定・開始</button>
+              <button id="eventEndBtn" style="padding:9px;border-radius:7px;border:1px solid #ef4444;background:#351313;color:#ffc2c2;cursor:pointer;">🏆 イベント終了・トップ3配金</button>
+              <div style="font-size:12px;color:#e9c8ff;margin-top:10px;">🎟 宝くじ設定</div>
+              <label style="font-size:10px;color:var(--dim);">当選金額<input id="lotteryPrizeInput" type="number" min="0" value="10000" style="width:100%;padding:7px;margin-top:3px;background:#0f141b;color:var(--text);border:1px solid var(--line);border-radius:6px;"></label>
+              <button id="lotteryStartBtn" style="padding:9px;border-radius:7px;border:1px solid #38bdf8;background:#0c3040;color:#bcecff;cursor:pointer;">🎟 宝くじを開始（5分）</button>
+              <button id="adminResetBalanceBtn" style="padding:9px;border-radius:7px;border:1px solid #ef4444;background:#351313;color:#ffc2c2;cursor:pointer;">⚠ 自分の残高を初期チップに戻す</button>
+            </div>
+            <div id="adminStatus" style="font-size:11px;color:var(--dim);margin-top:7px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="tabs">
+    <div class="tabBtn active" data-tab="slot">スロット</div>
+    <div class="tabBtn" data-tab="roulette">ルーレット</div>
+    <div class="tabBtn" data-tab="horse">競馬</div>
+    <div class="tabBtn" data-tab="lottery">宝くじ</div>
+    <div class="tabBtn" data-tab="shop">ショップ</div>
+    <div class="tabBtn" data-tab="auction">オークション</div>
+    <div class="tabBtn" data-tab="bag">バッグ</div>
+  </div>
+
+  <!-- LOTTERY -->
+  <div class="page" id="lotteryPage">
+    <div class="panel">
+      <div style="font-size:18px;font-weight:bold;color:var(--gold);margin-bottom:6px;">🎟 宝くじ</div>
+      <div id="lotteryStatus" style="font-size:12px;color:var(--dim);margin-bottom:8px;">開催待ち</div>
+      <div id="lotteryTimer" style="font-size:30px;text-align:center;font-weight:bold;margin:10px 0;">--:--</div>
+      <div id="lotteryNumbers" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;"></div>
+      <div id="lotteryResult" style="font-size:13px;text-align:center;margin-top:10px;min-height:22px;"></div>
+    </div>
+  </div>
+
+  <!-- SHOP -->
+  <div class="page" id="shopPage">
+    <div class="panel">
+      <div style="font-size:18px;font-weight:bold;color:var(--gold);margin-bottom:8px;">🛍️ ショップ</div>
+      <div class="sub">収集要素のトーテム・公式アイテム・プレイヤー出品を別々に表示。購入品はバッグに入ります。</div>
+      <h3 style="margin:14px 0 7px;color:#ffe88a;font-size:13px;">🗿 トーテム（全50種）</h3>
+      <div id="totemShopList" style="display:grid;gap:7px;"></div>
+      <h3 style="margin:16px 0 7px;color:#bfe2ff;font-size:13px;">🎫 アイテム</h3>
+      <div id="specialShopList" style="display:grid;gap:7px;"></div>
+      <h3 style="margin:16px 0 7px;color:#a8ffcf;font-size:13px;">👤 プレイヤー出品</h3>
+      <div id="playerShopList" style="display:grid;gap:7px;"></div>
+    </div>
+    <div class="panel">
+      <h3 style="color:#ffe88a;font-size:13px;margin-bottom:7px;">📦 自分で出品</h3>
+      <input id="marketNameInput" placeholder="好きな名前（規制対象の下ネタ等は出品不可）" style="width:100%;padding:9px;border-radius:7px;border:1px solid var(--line);background:#0f141b;color:var(--text);margin-bottom:7px;">
+      <input id="marketPriceInput" type="number" min="1" placeholder="価格" style="width:100%;padding:9px;border-radius:7px;border:1px solid var(--line);background:#0f141b;color:var(--text);margin-bottom:7px;">
+      <input id="marketUrlInput" placeholder="URL（任意。購入後クリック可能）" style="width:100%;padding:9px;border-radius:7px;border:1px solid var(--line);background:#0f141b;color:var(--text);margin-bottom:7px;">
+      <input id="marketFileInput" type="file" accept="image/*,audio/mpeg,audio/*,video/mp4,video/*" style="width:100%;margin-bottom:7px;">
+      <div style="font-size:10px;color:var(--dim);margin-bottom:7px;">画像・MP3・MP4等を1個添付可能。大きな動画はP2P通信量が大きくなるため小さめ推奨。</div>
+      <button id="marketListBtn" style="width:100%;padding:9px;border-radius:7px;border:1px solid #22c55e;background:#12351f;color:#b8ffd0;cursor:pointer;">📦 ショップに出品</button>
+      <div id="marketStatus" style="font-size:11px;color:var(--dim);margin-top:7px;"></div>
+    </div>
+  </div>
+
+  <!-- AUCTION -->
+  <div class="page" id="auctionPage">
+    <div class="panel">
+      <div style="font-size:18px;font-weight:bold;color:#d8b4ff;margin-bottom:8px;">🔨 オークション</div>
+      <div class="sub">出品者が開始価格と終了時刻を決めます。入札額を入力して購入予約できます。出品者が「落札」ボタンを押した時点の最高入札者が落札します。</div>
+      <div id="auctionList" style="display:grid;gap:8px;margin-top:10px;"></div>
+    </div>
+    <div class="panel">
+      <h3 style="color:#d8b4ff;font-size:13px;margin-bottom:7px;">🔨 オークション出品</h3>
+      <input id="auctionNameInput" placeholder="売る物の名前" style="width:100%;padding:9px;border-radius:7px;border:1px solid var(--line);background:#0f141b;color:var(--text);margin-bottom:7px;">
+      <input id="auctionStartPriceInput" type="number" min="1" placeholder="開始価格" style="width:100%;padding:9px;border-radius:7px;border:1px solid var(--line);background:#0f141b;color:var(--text);margin-bottom:7px;">
+      <input id="auctionEndInput" type="datetime-local" style="width:100%;padding:7px;border-radius:7px;border:1px solid var(--line);background:#0f141b;color:var(--text);margin-bottom:7px;">
+      <input id="auctionUrlInput" placeholder="URL（任意）" style="width:100%;padding:9px;border-radius:7px;border:1px solid var(--line);background:#0f141b;color:var(--text);margin-bottom:7px;">
+      <input id="auctionFileInput" type="file" accept="image/*,audio/mpeg,audio/*,video/mp4,video/*" style="width:100%;margin-bottom:7px;">
+      <button id="auctionListBtn" style="width:100%;padding:9px;border-radius:7px;border:1px solid #a855f7;background:#241333;color:#e9c8ff;cursor:pointer;">🔨 オークションに出品</button>
+      <div id="auctionStatus" style="font-size:11px;color:var(--dim);margin-top:7px;"></div>
+    </div>
+  </div>
+
+  <!-- BAG -->
+  <div class="page" id="bagPage">
+    <div class="panel">
+      <div style="font-size:18px;font-weight:bold;color:#ffe88a;margin-bottom:8px;">🎒 バッグ</div>
+      <div class="sub">購入・落札したもの、所持アイテム、トーテムをここで確認できます。MP3/MP4はここから再生できます。</div>
+      <div id="bagList" style="display:grid;gap:8px;margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- SLOT -->
+  <div class="page active" id="slotPage">
+    <div class="panel">
+      <div id="reels">
+        <div class="reelWindow"><div class="reelStrip" id="reel0"></div></div>
+        <div class="reelWindow"><div class="reelStrip" id="reel1"></div></div>
+        <div class="reelWindow"><div class="reelStrip" id="reel2"></div></div>
+      </div>
+      <div id="slotResult">レバーを引いてスタート!</div>
+      <div class="betRow">
+        <label>賭け金</label>
+        <input type="number" id="slotBetInput" min="10" step="10" value="100">
+        <div class="chipQuick">
+          <button data-mul="0.5">1/2</button><button data-mul="2">×2</button><button data-max>MAX</button>
+        </div>
+      </div>
+      <button class="bigBtn" id="slotSpinBtn">スピン!</button>
+      <div id="payTable">
+        <b>配当表(3つ揃い / 賭け金倍率)</b><br>
+        7️⃣7️⃣7️⃣ = 50倍(大当たり) ／ 💎💎💎 = 20倍 ／ 🔔🔔🔔 = 10倍 ／ 🍇🍇🍇 = 8倍<br>
+        🍊🍊🍊 = 5倍 ／ 🍋🍋🍋 = 4倍 ／ 🍒🍒🍒 = 3倍 ／ 🍒が2つ = 1.5倍
+      </div>
+    </div>
+  </div>
+
+  <!-- ROULETTE -->
+  <div class="page" id="roulettePage">
+    <div class="panel">
+      <div id="wheelWrap">
+        <div id="ballMarker"></div>
+        <canvas id="wheelCanvas" width="260" height="260"></canvas>
+      </div>
+      <div id="rouletteResult">数字またはアウトサイドベットを選んで賭けよう</div>
+      <div id="selectedBetInfo">未選択</div>
+      <div id="betGrid"></div>
+      <div id="outsideBets"></div>
+      <div id="outsideBets2"></div>
+      <button id="clearBetsBtn">選択をクリア</button>
+      <div class="betRow">
+        <label>賭け金</label>
+        <input type="number" id="rouletteBetInput" min="10" step="10" value="100">
+        <div class="chipQuick">
+          <button data-mul="0.5">1/2</button><button data-mul="2">×2</button><button data-max>MAX</button>
+        </div>
+      </div>
+      <button class="bigBtn" id="rouletteSpinBtn">ホイールを回す!</button>
+      <div class="sub">数字直接(ストレート)は的中で35倍、列(1st/2nd/3rd12)は3倍、赤黒・奇偶・高低は2倍で配当されます。</div>
+    </div>
+  </div>
+</div>
+
+  <!-- KEIBA -->
+  <div class="page" id="horsePage">
+    <div class="panel">
+      <div id="horseTrack">
+        <div class="horseLane"><div class="horse" id="horse0">🐎</div><div class="horseName">1番 サクラ</div></div>
+        <div class="horseLane"><div class="horse" id="horse1">🐎</div><div class="horseName">2番 ムーン</div></div>
+        <div class="horseLane"><div class="horse" id="horse2">🐎</div><div class="horseName">3番 ハヤテ</div></div>
+        <div class="horseLane"><div class="horse" id="horse3">🐎</div><div class="horseName">4番 スター</div></div>
+        <div class="horseLane"><div class="horse" id="horse4">🐎</div><div class="horseName">5番 クロノ</div></div>
+        <div class="horseLane"><div class="horse" id="horse5">🐎</div><div class="horseName">6番 ミライ</div></div>
+      </div>
+      <div id="horseLapInfo">全6頭・合計1周</div>
+      <div id="horseRaceStatus">馬を選んで賭けよう</div>
+      <div class="horseChoices" id="horseChoices"></div>
+      <div class="betRow">
+        <label>賭け金</label>
+        <input type="number" id="horseBetInput" min="10" step="10" value="100">
+        <div class="chipQuick">
+          <button data-mul="0.5">1/2</button><button data-mul="2">×2</button><button data-max>MAX</button>
+        </div>
+      </div>
+      <button class="bigBtn" id="horseStartBtn">レース開始!</button>
+      <div id="horseResult"></div>
+      <div class="sub">的中した馬が1位なら、賭け金の4倍が払い戻されます。外れた場合は賭け金は戻りません。</div>
+    </div>
+  </div>
+
+
+<script>
+(() => {
+  const SAVE_KEY = 'casino_save_v1';
+  const DEFAULT_GAME_SETTINGS = {startingBalance:5000, freeChipInterval:60, freeChipAmount:300, debtMax:1000, borrowAmount:500, repayRatio:0.5};
+  let gameSettings = Object.assign({}, DEFAULT_GAME_SETTINGS, (()=>{ try{return JSON.parse(localStorage.getItem('casino_game_settings_v1')||'{}')}catch(e){return {}} })());
+  function defaultSave() { return { balance: Number(gameSettings.startingBalance)||0, lastFreeChip: 0, debt: 0 }; }
+  let save = defaultSave();
+  function loadSave() { try { const raw = localStorage.getItem(SAVE_KEY); if (raw) save = Object.assign(defaultSave(), JSON.parse(raw)); } catch(e) {} }
+  function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch(e) {} }
+  loadSave();
+
+  const balanceVal = document.getElementById('balanceVal');
+  const freeChipBtn = document.getElementById('freeChipBtn');
+
+  const debtLbl = document.getElementById('debtLbl');
+  const debtVal = document.getElementById('debtVal');
+  const borrowBtn = document.getElementById('borrowBtn');
+  const DEBT_MAX = 1000;
+  const DEBT_BORROW_AMOUNT = 500;
+  const DEBT_REPAY_RATIO = 0.5;
+
+  function renderBalance() { balanceVal.textContent = save.balance.toLocaleString(); }
+  function renderDebt() {
+    if (save.debt > 0) { debtLbl.style.display='block'; debtVal.textContent = save.debt.toLocaleString(); }
+    else { debtLbl.style.display='none'; }
+    updateBorrowBtn();
+  }
+  function addBalance(n) {
+    if (n > 0 && save.debt > 0) {
+      const repay = Math.min(save.debt, Math.ceil(n * Number(gameSettings.repayRatio)));
+      save.debt -= repay;
+      save.balance = Math.max(0, save.balance + (n - repay));
+    } else {
+      save.balance = Math.max(0, save.balance + n);
+    }
+    renderBalance(); renderDebt(); writeSave();
+  }
+  function updateBorrowBtn() {
+    const canBorrow = save.balance === 0 && save.debt < Number(gameSettings.debtMax);
+    borrowBtn.disabled = !canBorrow;
+    borrowBtn.textContent = save.debt >= Number(gameSettings.debtMax) ? '借金上限に到達' : `借金する (+${Math.min(Number(gameSettings.borrowAmount), Math.max(0, Number(gameSettings.debtMax)-save.debt))})`;
+  }
+  borrowBtn.addEventListener('click', () => {
+    if (save.balance !== 0 || save.debt >= Number(gameSettings.debtMax)) return;
+    const amount = Math.min(Number(gameSettings.borrowAmount), Number(gameSettings.debtMax) - save.debt);
+    save.debt += amount;
+    save.balance += amount;
+    renderBalance(); renderDebt(); writeSave();
+  });
+
+  function updateFreeChipBtn() {
+    const now = Date.now();
+    const interval = Math.max(1, Number(gameSettings.freeChipInterval)||1) * 1000;
+    const amount = Math.max(0, Math.floor(Number(gameSettings.freeChipAmount)||0));
+    const remain = interval - (now - save.lastFreeChip);
+    if (remain <= 0) { freeChipBtn.disabled = false; freeChipBtn.textContent = '無料チップ +'+amount.toLocaleString(); }
+    else { freeChipBtn.disabled = true; const sec = Math.ceil(remain/1000), mm=Math.floor(sec/60), ss=sec%60; freeChipBtn.textContent = `次まで ${mm}:${String(ss).padStart(2,'0')}`; }
+  }
+  freeChipBtn.addEventListener('click', () => {
+    const now = Date.now();
+    const interval = Math.max(1, Number(gameSettings.freeChipInterval)||1) * 1000;
+    const amount = Math.max(0, Math.floor(Number(gameSettings.freeChipAmount)||0));
+    if (now - save.lastFreeChip >= interval) { save.lastFreeChip = now; addBalance(amount); writeSave(); updateFreeChipBtn(); }
+  });
+  setInterval(updateFreeChipBtn, 1000);
+  renderBalance(); renderDebt(); updateFreeChipBtn();
+
+  // ---- Tabs ----
+  document.querySelectorAll('.tabBtn').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tabBtn').forEach(t=>t.classList.toggle('active', t===tab));
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.getElementById(tab.dataset.tab+'Page').classList.add('active');
+    });
+  });
+
+  // ---- Bet quick buttons (shared behavior) ----
+  function wireBetQuick(inputEl, container) {
+    container.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        let v = parseInt(inputEl.value)||0;
+        if (btn.dataset.mul) v = Math.max(10, Math.floor(v*parseFloat(btn.dataset.mul)/10)*10);
+        else if (btn.hasAttribute('data-max')) v = Math.max(10, Math.floor(save.balance/10)*10);
+        inputEl.value = Math.min(v, Math.max(10,save.balance));
+      });
+    });
+  }
+  const slotBetInput = document.getElementById('slotBetInput');
+  const rouletteBetInput = document.getElementById('rouletteBetInput');
+  const horseBetInput = document.getElementById('horseBetInput');
+  wireBetQuick(slotBetInput, document.querySelector('#slotPage .chipQuick'));
+  wireBetQuick(rouletteBetInput, document.querySelector('#roulettePage .chipQuick'));
+  wireBetQuick(horseBetInput, document.querySelector('#horsePage .chipQuick'));
+
+  function clampBetInput(inputEl) {
+    let v = parseInt(inputEl.value)||0;
+    v = Math.max(10, Math.min(v, save.balance));
+    inputEl.value = v;
+    return v;
+  }
+
+  // ================= SLOT MACHINE =================
+  const SYMBOLS = [
+    { id:'cherry', ch:'🍒', weight:30 },
+    { id:'lemon', ch:'🍋', weight:24 },
+    { id:'orange', ch:'🍊', weight:18 },
+    { id:'grape', ch:'🍇', weight:13 },
+    { id:'bell', ch:'🔔', weight:8 },
+    { id:'diamond', ch:'💎', weight:5 },
+    { id:'seven', ch:'7️⃣', weight:2 }
+  ];
+  const PAYOUT = { cherry:3, lemon:4, orange:5, grape:8, bell:10, diamond:20, seven:50 };
+  const totalWeight = SYMBOLS.reduce((s,x)=>s+x.weight,0);
+  function weightedPickSymbol() {
+    let r = Math.random()*totalWeight;
+    for (const s of SYMBOLS) { if (r < s.weight) return s; r -= s.weight; }
+    return SYMBOLS[0];
+  }
+  function buildReelStrip(el, finalSymbol) {
+    el.innerHTML = '';
+    const seq = [];
+    for (let i=0;i<24;i++) seq.push(weightedPickSymbol());
+    seq.push(finalSymbol);
+    seq.forEach(s => { const d=document.createElement('div'); d.className='sym'; d.textContent=s.ch; el.appendChild(d); });
+    el.style.transition = 'none';
+    el.style.transform = 'translateY(0px)';
+  }
+  function spinReelTo(el, delayStart, duration) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        const total = el.children.length;
+        const finalOffset = -(total-1)*100;
+        el.style.transition = `transform ${duration}ms cubic-bezier(.15,.8,.25,1)`;
+        requestAnimationFrame(() => { el.style.transform = `translateY(${finalOffset}px)`; });
+        setTimeout(resolve, duration);
+      }, delayStart);
+    });
+  }
+
+  // ================= EVENT / LOTTERY =================
+  let eventState=null, eventScores={};
+  let lotteryState=null, lotteryTimer=null;
+  const EVENT_KEY='casino_event_state_v2', EVENT_SCORE_KEY='casino_event_scores_v2', LOTTERY_KEY='casino_lottery_state_v2';
+  // ---- P2P同期（中央サーバーなし） ----
+  // PeerJSで接続中のプレイヤー同士へ直接同期する。追加のサーバーファイルは不要。
+  const globalSyncStatus=document.getElementById('globalSyncStatus');
+  function syncStatus(t,ok=true){if(globalSyncStatus){globalSyncStatus.textContent='🌐 P2P全体同期：'+t;globalSyncStatus.style.color=ok?'#8fd3ff':'var(--dim)';}}
+  function syncSend(msg){} // 中央同期サーバーは使用しない
+  function formatRemain(ms){const sec=Math.max(0,Math.ceil(ms/1000)),d=Math.floor(sec/86400),h=Math.floor(sec%86400/3600),m=Math.floor(sec%3600/60),s=sec%60;return d?`${d}日 ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;}
+  function renderGlobalEvent(){const box=document.getElementById('globalEventBanner');if(!box)return;if(!eventState){box.style.display='none';return}const now=Date.now();if(eventState.finished||now>=Number(eventState.endAt)){box.style.display='none';return}box.style.display='block';document.getElementById('globalEventName').textContent=eventState.name||'イベント';if(now<Number(eventState.startAt)){document.getElementById('globalEventInfo').textContent='開催予定・倍率 '+Number(eventState.multiplier||1)+'倍';document.getElementById('globalEventTimer').textContent='開始まで '+formatRemain(Number(eventState.startAt)-now);return}document.getElementById('globalEventInfo').textContent='開催中・払い戻し倍率 '+Number(eventState.multiplier||1)+'倍';document.getElementById('globalEventTimer').textContent='残り '+formatRemain(Number(eventState.endAt)-now);}
+  setInterval(renderGlobalEvent,1000);
+  try{eventState=JSON.parse(localStorage.getItem(EVENT_KEY)||'null')}catch(e){eventState=null}
+  try{eventScores=JSON.parse(localStorage.getItem(EVENT_SCORE_KEY)||'{}')||{}}catch(e){eventScores={}}
+  try{lotteryState=JSON.parse(localStorage.getItem(LOTTERY_KEY)||'null')}catch(e){lotteryState=null}
+  const eventMultiplierNow=()=>eventState&&Date.now()>=Number(eventState.startAt)&&Date.now()<Number(eventState.endAt)?Math.max(1,Number(eventState.multiplier)||1):1;
+  function eventScore(n){if(!eventState||Date.now()<eventState.startAt||Date.now()>=eventState.endAt||n<=0)return;const name=safeName();eventScores[name]=(Number(eventScores[name])||0)+Math.floor(n);try{localStorage.setItem(EVENT_SCORE_KEY,JSON.stringify(eventScores))}catch(e){};for(const c of connections.values())if(c&&c.open)try{c.send({type:'eventScore',eventId:eventState.id,name,score:eventScores[name]})}catch(e){}}
+  function eventPayout(n){const base=Math.max(0,Math.floor(Number(n)||0));if(!base)return 0;const out=Math.floor(base*eventMultiplierNow());eventScore(out);return out}
+  function renderLottery(){
+    const box=document.getElementById('lotteryNumbers'), st=document.getElementById('lotteryStatus'), tm=document.getElementById('lotteryTimer'); if(!box)return;
+    box.innerHTML=''; for(let n=1;n<=20;n++){const b=document.createElement('button');b.textContent=n;b.style.cssText='padding:10px 0;border:1px solid var(--line);border-radius:7px;background:#0f141b;color:var(--text);cursor:pointer;font-weight:bold;';if(lotteryState&&lotteryState.active&&lotteryState.choice===n)b.style.borderColor='#38bdf8';b.onclick=()=>{if(!lotteryState||!lotteryState.active||Date.now()>=lotteryState.endsAt){document.getElementById('lotteryResult').textContent='現在は開催されていません';return}lotteryState.choice=n;localStorage.setItem(LOTTERY_KEY,JSON.stringify(lotteryState));renderLottery();document.getElementById('lotteryResult').textContent=n+'番を選択しました'};box.appendChild(b)}
+    if(lotteryState&&lotteryState.active){const s=Math.max(0,Math.ceil((lotteryState.endsAt-Date.now())/1000));tm.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');st.textContent='開催中：賞金 '+Number(lotteryState.prize||0).toLocaleString()+'チップ'}else{tm.textContent='--:--';st.textContent=lotteryState&&lotteryState.finished?'終了しました':'開催待ち'}
+  }
+  function finishLottery(){if(!lotteryState||!lotteryState.active||Date.now()<lotteryState.endsAt)return;lotteryState.active=false;lotteryState.finished=true;const result=lotteryState.winningNumber;const paidKey='casino_lottery_paid_'+lotteryState.id;if(lotteryState.choice===result&&localStorage.getItem(paidKey)!=='1'){addBalance(Math.max(0,Math.floor(Number(lotteryState.prize)||0)));writeSave();localStorage.setItem(paidKey,'1');document.getElementById('lotteryResult').textContent='🎉 当選！ '+result+'番 +'+Number(lotteryState.prize||0).toLocaleString()+'チップ'}else document.getElementById('lotteryResult').textContent='当選番号は '+result+'番';localStorage.setItem(LOTTERY_KEY,JSON.stringify(lotteryState));renderLottery();if(typeof broadcastLottery==='function')broadcastLottery(true)}
+  renderLottery();
+  setInterval(()=>{finishLottery();renderLottery()},1000);
+
+  const slotResult = document.getElementById('slotResult');
+  const slotSpinBtn = document.getElementById('slotSpinBtn');
+  const reelEls = [document.getElementById('reel0'), document.getElementById('reel1'), document.getElementById('reel2')];
+  let slotSpinning = false;
+
+  slotSpinBtn.addEventListener('click', async () => {
+    if (slotSpinning) return;
+    const bet = clampBetInput(slotBetInput);
+    if (bet > save.balance || bet < 10) { slotResult.textContent = '賭け金が不正です'; return; }
+    slotSpinning = true; slotSpinBtn.disabled = true;
+    addBalance(-bet);
+    slotResult.textContent = '回転中…';
+
+    const finals = [weightedPickSymbol(), weightedPickSymbol(), weightedPickSymbol()];
+    reelEls.forEach((el,i) => buildReelStrip(el, finals[i]));
+
+    await Promise.all([
+      spinReelTo(reelEls[0], 0, 900),
+      spinReelTo(reelEls[1], 200, 1200),
+      spinReelTo(reelEls[2], 400, 1500)
+    ]);
+
+    const ids = finals.map(f=>f.id);
+    let win = 0, msg = '';
+    if (ids[0]===ids[1] && ids[1]===ids[2]) { win = bet * PAYOUT[ids[0]]; msg = `${finals[0].ch}${finals[1].ch}${finals[2].ch} 3つ揃い! ${PAYOUT[ids[0]]}倍 → +${win.toLocaleString()}チップ!`; }
+    else if (ids[0]==='cherry' && ids[1]==='cherry') { win = Math.round(bet*1.5); msg = `🍒🍒 揃い! 1.5倍 → +${win.toLocaleString()}チップ`; }
+    else if (ids[1]==='cherry' && ids[2]==='cherry') { win = Math.round(bet*1.5); msg = `🍒🍒 揃い! 1.5倍 → +${win.toLocaleString()}チップ`; }
+    else { msg = 'ハズレ…また挑戦しよう'; }
+
+    if (win>0) { const finalWin=eventPayout(win); addBalance(finalWin); }
+    slotResult.textContent = msg;
+    slotSpinning = false; slotSpinBtn.disabled = false;
+  });
+
+  // ================= ROULETTE =================
+  const WHEEL_ORDER = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+  const RED_NUMBERS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+  function numColor(n) { if (n===0) return 'zero'; return RED_NUMBERS.has(n) ? 'red' : 'black'; }
+
+  const betGrid = document.getElementById('betGrid');
+  const outsideBets = document.getElementById('outsideBets');
+  const outsideBets2 = document.getElementById('outsideBets2');
+  const selectedBetInfo = document.getElementById('selectedBetInfo');
+  let currentBet = null; // { type:'straight', number:n } | { type:'dozen', which:1|2|3 } | { type:'redblack', color } | { type:'oddeven', which } | { type:'highlow', which }
+
+  function buildNumberGrid() {
+    betGrid.innerHTML = '';
+    const zero = document.createElement('div');
+    zero.className = 'numCell zero'; zero.textContent = '0'; zero.dataset.num = '0';
+    betGrid.appendChild(zero);
+    for (let n=1;n<=36;n++) {
+      const cell = document.createElement('div');
+      cell.className = 'numCell ' + numColor(n);
+      cell.textContent = n;
+      cell.dataset.num = n;
+      betGrid.appendChild(cell);
+    }
+    betGrid.querySelectorAll('.numCell').forEach(cell => {
+      cell.addEventListener('click', () => {
+        currentBet = { type:'straight', number: parseInt(cell.dataset.num) };
+        refreshBetSelectionUI();
+      });
+    });
+  }
+  function buildOutsideBets() {
+    outsideBets.innerHTML = '';
+    [ {label:'1st12 (1-12)', type:'dozen', which:1}, {label:'2nd12 (13-24)', type:'dozen', which:2}, {label:'3rd12 (25-36)', type:'dozen', which:3} ]
+      .forEach(o => { const b=document.createElement('div'); b.className='outBtn'; b.textContent=o.label; b.addEventListener('click',()=>{ currentBet={type:o.type,which:o.which}; refreshBetSelectionUI(); }); outsideBets.appendChild(b); });
+    outsideBets2.innerHTML = '';
+    [ {label:'赤', type:'redblack', which:'red', cls:'red'}, {label:'黒', type:'redblack', which:'black', cls:'black'},
+      {label:'奇数', type:'oddeven', which:'odd'}, {label:'偶数', type:'oddeven', which:'even'},
+      {label:'1-18', type:'highlow', which:'low'}, {label:'19-36', type:'highlow', which:'high'} ]
+      .forEach(o => { const b=document.createElement('div'); b.className='outBtn'+(o.cls?(' '+o.cls):''); b.textContent=o.label; b.addEventListener('click',()=>{ currentBet={type:o.type,which:o.which}; refreshBetSelectionUI(); }); outsideBets2.appendChild(b); });
+  }
+  function betLabel(bet) {
+    if (!bet) return '未選択';
+    if (bet.type==='straight') return `数字 ${bet.number} (的中で35倍)`;
+    if (bet.type==='dozen') return `${bet.which===1?'1st12':bet.which===2?'2nd12':'3rd12'} (的中で3倍)`;
+    if (bet.type==='redblack') return `${bet.which==='red'?'赤':'黒'} (的中で2倍)`;
+    if (bet.type==='oddeven') return `${bet.which==='odd'?'奇数':'偶数'} (的中で2倍)`;
+    if (bet.type==='highlow') return `${bet.which==='low'?'1-18':'19-36'} (的中で2倍)`;
+    return '不明';
+  }
+  function refreshBetSelectionUI() {
+    selectedBetInfo.textContent = '選択中: ' + betLabel(currentBet);
+    document.querySelectorAll('.numCell').forEach(c => c.classList.toggle('selected', currentBet && currentBet.type==='straight' && parseInt(c.dataset.num)===currentBet.number));
+    document.querySelectorAll('.outBtn').forEach(b => b.classList.remove('selected'));
+    if (currentBet && currentBet.type!=='straight') {
+      const idx = { dozen:0, redblack:0, oddeven:0, highlow:0 };
+      document.querySelectorAll('#outsideBets .outBtn').forEach((b,i) => { const opts=[1,2,3]; if (currentBet.type==='dozen' && currentBet.which===opts[i]) b.classList.add('selected'); });
+      document.querySelectorAll('#outsideBets2 .outBtn').forEach((b,i) => {
+        const map = [ {type:'redblack',which:'red'},{type:'redblack',which:'black'},{type:'oddeven',which:'odd'},{type:'oddeven',which:'even'},{type:'highlow',which:'low'},{type:'highlow',which:'high'} ];
+        if (currentBet.type===map[i].type && currentBet.which===map[i].which) b.classList.add('selected');
+      });
+    }
+  }
+  document.getElementById('clearBetsBtn').addEventListener('click', () => { currentBet=null; refreshBetSelectionUI(); });
+  buildNumberGrid(); buildOutsideBets(); refreshBetSelectionUI();
+
+  // wheel drawing
+  const wheelCanvas = document.getElementById('wheelCanvas');
+  const wctx = wheelCanvas.getContext('2d');
+  const WC = 130, WR = 122;
+  function drawWheel(rotation) {
+    wctx.clearRect(0,0,260,260);
+    const n = WHEEL_ORDER.length;
+    const seg = (Math.PI*2)/n;
+    wctx.save();
+    wctx.translate(WC,WC);
+    wctx.rotate(rotation);
+    for (let i=0;i<n;i++) {
+      const num = WHEEL_ORDER[i];
+      const a0 = i*seg, a1 = (i+1)*seg;
+      wctx.beginPath(); wctx.moveTo(0,0); wctx.arc(0,0,WR,a0,a1); wctx.closePath();
+      wctx.fillStyle = numColor(num)==='red' ? '#c23b3b' : numColor(num)==='black' ? '#1c1c1c' : '#2f8f5b';
+      wctx.fill(); wctx.strokeStyle='#0b0f14'; wctx.lineWidth=1; wctx.stroke();
+      wctx.save();
+      wctx.rotate(a0+seg/2);
+      wctx.translate(WR*0.78, 0);
+      wctx.rotate(Math.PI/2);
+      wctx.fillStyle = '#fff'; wctx.font='11px sans-serif'; wctx.textAlign='center'; wctx.textBaseline='middle';
+      wctx.fillText(String(num), 0, 0);
+      wctx.restore();
+    }
+    wctx.restore();
+    wctx.beginPath(); wctx.arc(WC,WC,18,0,Math.PI*2); wctx.fillStyle='#e0b84a'; wctx.fill();
+  }
+  let wheelRotation = 0;
+  drawWheel(wheelRotation);
+
+  const rouletteResult = document.getElementById('rouletteResult');
+  const rouletteSpinBtn = document.getElementById('rouletteSpinBtn');
+  let rouletteSpinning = false;
+
+  function animateWheelTo(targetRotation, duration) {
+    return new Promise(resolve => {
+      const start = performance.now();
+      const from = wheelRotation;
+      const delta = targetRotation - from;
+      function step(t) {
+        const p = Math.min(1, (t-start)/duration);
+        const eased = 1 - Math.pow(1-p, 4);
+        drawWheel(from + delta*eased);
+        if (p<1) requestAnimationFrame(step);
+        else { wheelRotation = targetRotation % (Math.PI*2); resolve(); }
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  rouletteSpinBtn.addEventListener('click', async () => {
+    if (rouletteSpinning) return;
+    if (!currentBet) { rouletteResult.textContent = '先に賭ける対象を選んでください'; return; }
+    const bet = clampBetInput(rouletteBetInput);
+    if (bet > save.balance || bet < 10) { rouletteResult.textContent = '賭け金が不正です'; return; }
+    rouletteSpinning = true; rouletteSpinBtn.disabled = true;
+    addBalance(-bet);
+    rouletteResult.textContent = '回転中…';
+
+    const winIndex = Math.floor(Math.random()*WHEEL_ORDER.length);
+    const winNumber = WHEEL_ORDER[winIndex];
+    const seg = (Math.PI*2)/WHEEL_ORDER.length;
+    // ball marker fixed at top (angle -PI/2); wheel rotates so winIndex segment center lands at top
+    const targetSegCenter = winIndex*seg + seg/2;
+    const spins = 5 + Math.floor(Math.random()*3);
+    const targetRotation = wheelRotation + Math.PI*2*spins + ((-Math.PI/2) - targetSegCenter - wheelRotation % (Math.PI*2));
+    // simpler: compute absolute final rotation directly
+    const finalRotation = (Math.PI*2*spins) + (-Math.PI/2 - targetSegCenter);
+
+    await animateWheelTo(finalRotation, 3800);
+
+    const color = numColor(winNumber);
+    let win = 0, hit = false;
+    if (currentBet.type==='straight' && currentBet.number===winNumber) { win = bet*35; hit=true; }
+    else if (currentBet.type==='dozen') {
+      const inDozen = (currentBet.which===1 && winNumber>=1 && winNumber<=12) || (currentBet.which===2 && winNumber>=13 && winNumber<=24) || (currentBet.which===3 && winNumber>=25 && winNumber<=36);
+      if (inDozen) { win = bet*3; hit=true; }
+    } else if (currentBet.type==='redblack') { if (winNumber!==0 && color===currentBet.which) { win = bet*2; hit=true; } }
+    else if (currentBet.type==='oddeven') { if (winNumber!==0 && (winNumber%2===0)===(currentBet.which==='even')) { win = bet*2; hit=true; } }
+    else if (currentBet.type==='highlow') { if (winNumber!==0 && ((currentBet.which==='low'&&winNumber<=18)||(currentBet.which==='high'&&winNumber>=19))) { win = bet*2; hit=true; } }
+
+    if (win>0) { const finalWin=eventPayout(win); addBalance(finalWin); }
+    const colorJp = color==='red'?'赤':color==='black'?'黒':'緑';
+    rouletteResult.textContent = hit
+      ? `${winNumber}(${colorJp}) 的中! +${win.toLocaleString()}チップ`
+      : `${winNumber}(${colorJp}) … ハズレ`;
+
+    rouletteSpinning = false; rouletteSpinBtn.disabled = false;
+  });
+
+
+  // ================= NETWORK + ADMIN =================
+  const ADMIN_PASSWORD = 'wasd1109';
+  const playerNameInput = document.getElementById('playerNameInput');
+  const myPeerId = document.getElementById('myPeerId');
+  const peerNameInput = document.getElementById('peerNameInput');
+  const connectPeerBtn = document.getElementById('connectPeerBtn');
+  const connectionStatus = document.getElementById('connectionStatus');
+  const transferAmountInput = document.getElementById('transferAmountInput');
+  const transferBtn = document.getElementById('transferBtn');
+  const transferLog = document.getElementById('transferLog');
+  const adminOpenBtn = document.getElementById('adminOpenBtn');
+  const adminPanel = document.getElementById('adminPanel');
+  const adminPasswordInput = document.getElementById('adminPasswordInput');
+  const adminLoginBtn = document.getElementById('adminLoginBtn');
+  const adminControls = document.getElementById('adminControls');
+  const adminStatus = document.getElementById('adminStatus');
+  const adminTargetName = document.getElementById('adminTargetName');
+  const adminGiveAmount = document.getElementById('adminGiveAmount');
+  const adminGiveAllBtn = document.getElementById('adminGiveAllBtn');
+  const onlinePlayersList = document.getElementById('onlinePlayersList');
+  const onlinePlayersStatus = document.getElementById('onlinePlayersStatus');
+  const adminResetBalanceBtn = document.getElementById('adminResetBalanceBtn');
+  const eventNameInput=document.getElementById('eventNameInput'), eventStartInput=document.getElementById('eventStartInput'), eventEndInput=document.getElementById('eventEndInput'), eventMultiplierInput=document.getElementById('eventMultiplierInput'), eventPrize1Input=document.getElementById('eventPrize1Input'), eventPrize2Input=document.getElementById('eventPrize2Input'), eventPrize3Input=document.getElementById('eventPrize3Input'), eventStartBtn=document.getElementById('eventStartBtn'), eventEndBtn=document.getElementById('eventEndBtn'), lotteryPrizeInput=document.getElementById('lotteryPrizeInput'), lotteryStartBtn=document.getElementById('lotteryStartBtn');
+
+
+  playerNameInput.value = localStorage.getItem('casino_player_name_v1') || '';
+  playerNameInput.addEventListener('input', () => localStorage.setItem('casino_player_name_v1', playerNameInput.value.trim()));
+
+  let myPeer = null;
+  let activeConn = null;
+  const connections = new Map();
+  const knownPlayers = new Map(); // name -> latest known PeerJS ID
+  const presence = new Map();      // peerId -> {name,lastSeen}
+  const processedTx = new Set(JSON.parse(localStorage.getItem('casino_processed_tx_v1') || '[]'));
+
+  function safeName(){
+    return (playerNameInput.value || '名無し').trim().slice(0,30) || '名無し';
+  }
+  function esc(v){
+    return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function setConnStatus(t){ connectionStatus.textContent=t; }
+  function saveProcessedTx(){
+    try{
+      const arr=[...processedTx].slice(-500);
+      localStorage.setItem('casino_processed_tx_v1',JSON.stringify(arr));
+    }catch(e){}
+  }
+  function txSeen(id){ return id && processedTx.has(String(id)); }
+  function markTx(id){
+    if(!id) return;
+    processedTx.add(String(id));
+    saveProcessedTx();
+  }
+
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      return true;
+    }catch(e){
+      try{
+        const ta=document.createElement('textarea');
+        ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); ta.remove();
+        return true;
+      }catch(_){ return false; }
+    }
+  }
+
+  function rememberPlayer(name, peerId){
+    const n=String(name||'名無し').trim().slice(0,30)||'名無し';
+    const id=String(peerId||'').trim();
+    if(!id || id===myPeer?.id) return;
+    knownPlayers.set(n,id);
+    presence.set(id,{name:n,lastSeen:Date.now()});
+  }
+
+  function broadcastPresence(){
+    const players=[...knownPlayers.entries()].map(([name,peerId])=>({name,peerId}));
+    if(myPeer?.id) players.push({name:safeName(),peerId:myPeer.id});
+    const uniq=[...new Map(players.filter(x=>x&&x.peerId).map(x=>[x.peerId,x])).values()];
+    for(const conn of connections.values()){if(conn&&conn.open){try{conn.send({type:'presence',name:safeName(),peerId:myPeer?.id,players:uniq})}catch(e){}}}
+  }
+
+  function renderOnlinePlayers(){
+    if(!onlinePlayersList) return;
+    onlinePlayersList.innerHTML='';
+    const now=Date.now();
+    const online=[...presence.entries()]
+      .filter(([id,p])=>id!==myPeer?.id && p && now-p.lastSeen < 12000)
+      .map(([id,p])=>({id,name:p.name||'名無し'}))
+      .sort((a,b)=>a.name.localeCompare(b.name,'ja'));
+
+    if(!online.length){
+      onlinePlayersList.innerHTML='<div style="font-size:11px;color:var(--dim);padding:6px;">現在オンラインとして確認できるプレイヤーはいません。</div>';
+    }
+
+    online.forEach(p=>{
+      const row=document.createElement('button');
+      row.type='button';
+      row.style.cssText='text-align:left;padding:8px;border:1px solid var(--line);border-radius:7px;background:#0f141b;color:var(--text);cursor:pointer;';
+      row.innerHTML=`<b>🟢 ${esc(p.name)}</b><div style="font-size:9px;color:var(--dim);margin-top:2px;word-break:break-all;">クリックで現在のIDをコピー</div>`;
+      row.addEventListener('click',async()=>{
+        peerNameInput.value=p.id;
+        const ok=await copyText(p.id);
+        row.style.borderColor='#22c55e';
+        row.querySelector('div').textContent=ok ? `コピーしました：${p.id}` : `IDを入力欄へセット：${p.id}`;
+        setTimeout(()=>{ if(row.isConnected) row.querySelector('div').textContent='クリックで現在のIDをコピー'; },2200);
+      });
+      onlinePlayersList.appendChild(row);
+    });
+    onlinePlayersStatus.textContent=`オンライン：${online.length}人`;
+  }
+
+  function registerConn(conn){
+    if(!conn || !conn.peer) return;
+    const old=connections.get(conn.peer);
+    if(old && old!==conn){
+      try{ old.close(); }catch(e){}
+    }
+    activeConn=conn;
+    connections.set(conn.peer,conn);
+    renderOnlinePlayers();
+    setConnStatus('接続中…');
+
+    const touch=()=>{
+      const name=String(conn.metadata?.name||presence.get(conn.peer)?.name||'名無し');
+      presence.set(conn.peer,{name,lastSeen:Date.now()});
+      if(name) knownPlayers.set(name,conn.peer);
+      renderOnlinePlayers();
+    };
+
+    conn.on('open',()=>{
+      conn.metadata=conn.metadata||{};
+      conn.send({type:'hello',name:safeName(),peerId:myPeer?.id});
+      try{conn.send({type:'eventState',state:eventState,scores:eventScores});if(lotteryState)conn.send({type:'lotteryState',state:{id:lotteryState.id,active:lotteryState.active,finished:lotteryState.finished,startedAt:lotteryState.startedAt,endsAt:lotteryState.endsAt,prize:lotteryState.prize}})}catch(e){}
+      touch();
+      setConnStatus(`接続中：${conn.metadata.name || '相手'}`);
+    });
+
+    conn.on('data',data=>{
+      if(!data || typeof data!=='object') return;
+      touch();
+
+      if(data.type==='hello'){
+        conn.metadata=conn.metadata||{};
+        conn.metadata.name=String(data.name||'名無し');
+        rememberPlayer(conn.metadata.name,conn.peer);
+        conn.send({type:'presence',name:safeName(),peerId:myPeer?.id,
+          players:[...knownPlayers.entries()].map(([name,peerId])=>({name,peerId}))});
+        renderOnlinePlayers();
+        setConnStatus(`接続中：${conn.metadata.name}`);
+      }
+
+      else if(data.type==='presence'){
+        if(data.peerId && data.peerId!==myPeer?.id) rememberPlayer(data.name,data.peerId);
+        (Array.isArray(data.players)?data.players:[]).forEach(p=>{if(p&&p.name&&p.peerId)rememberPlayer(p.name,p.peerId)});
+        renderOnlinePlayers();
+        // Mesh discovery: connect to newly learned peers, so the online list isn't limited to previous transfer targets.
+        for(const [n,id] of knownPlayers){if(id&&id!==myPeer?.id&&!connections.has(id))connectById(id)}
+      }
+
+      else if(data.type==='ping'){
+        try{ conn.send({type:'pong',peerId:myPeer?.id,name:safeName(),ts:data.ts}); }catch(e){}
+      }
+
+      else if(data.type==='pong'){
+        touch();
+      }
+
+      else if(data.type==='money'){
+        const amount=Math.max(0,Math.floor(Number(data.amount)||0));
+        const txId=String(data.txId||'');
+        if(amount>0 && (!txId || !txSeen(txId))){
+          if(txId) markTx(txId);
+          addBalance(amount);
+          transferLog.textContent=`💰 ${String(data.senderName||'名無し')} から ${amount.toLocaleString()}チップ受信！`;
+        }
+        try{ conn.send({type:'moneyAck',txId}); }catch(e){}
+      }
+
+      else if(data.type==='moneyAck'){
+        if(data.txId && pendingTransfers.has(String(data.txId))){
+          const p=pendingTransfers.get(String(data.txId));
+          pendingTransfers.delete(String(data.txId));
+          if(!p.committed){
+            p.committed=true;
+            addBalance(-p.amount);
+            transferLog.textContent=`${p.name} に ${p.amount.toLocaleString()}チップを送金しました`;
+          }
+        }
+      }
+
+      else if(data.type==='adminMoney'){
+        const amount=Math.max(0,Math.floor(Number(data.amount)||0));
+        const txId=String(data.txId||'');
+        if(amount>0 && (!txId || !txSeen(txId))){
+          if(txId) markTx(txId);
+          addBalance(amount);
+          transferLog.textContent=`👑 管理者から ${amount.toLocaleString()}チップ付与！`;
+        }
+        try{ conn.send({type:'adminMoneyAck',txId}); }catch(e){}
+      }
+
+      else if(data.type==='adminMoneyAck'){
+        const key=String(data.txId||'');
+        if(key && pendingAdmin.has(key)){
+          const p=pendingAdmin.get(key);
+          p.acked=true;
+          p.resolve(true);
+          pendingAdmin.delete(key);
+        }
+      }
+
+      else if(data.type==='eventState'){eventState=data.state||null;eventScores=data.scores||{};if(eventState){localStorage.setItem(EVENT_KEY,JSON.stringify(eventState));localStorage.setItem(EVENT_SCORE_KEY,JSON.stringify(eventScores))}else{localStorage.removeItem(EVENT_KEY);localStorage.removeItem(EVENT_SCORE_KEY)}renderGlobalEvent();syncStatus('接続中の全員に同期',true)}
+      else if(data.type==='eventScore'){if(eventState&&data.eventId===eventState.id&&data.name){eventScores[data.name]=Math.max(Number(eventScores[data.name])||0,Number(data.score)||0);try{localStorage.setItem(EVENT_SCORE_KEY,JSON.stringify(eventScores))}catch(e){}}}
+      else if(data.type==='eventPrize'){const k='casino_event_paid_'+String(data.txId||'');if(localStorage.getItem(k)!=='1'){const a=Math.max(0,Math.floor(Number(data.amount)||0));if(a){addBalance(a);writeSave();localStorage.setItem(k,'1');transferLog.textContent='🏆 イベント'+data.rank+'位賞金 +'+a.toLocaleString()+'チップ'}}}
+      else if(data.type==='lotteryState'){if(data.state){lotteryState=Object.assign({},lotteryState||{},data.state);if(data.state.winningNumber)lotteryState.winningNumber=data.state.winningNumber;localStorage.setItem(LOTTERY_KEY,JSON.stringify(lotteryState));renderLottery();syncStatus('接続中の全員に同期',true)}}
+      else if(data.type==='marketBuyRequest'){const item=marketState.listings.find(x=>x.id===data.listingId);if(item&&item.sellerId===myPeer?.id){try{const c=connections.get(data.buyerId);c?.send({type:'marketPurchaseConfirm',txId:data.txId,item,price:item.price});}catch(e){}}}
+      else if(data.type==='marketPurchaseConfirm'){const price=Number(data.price)||0;if(price>0&&price<=save.balance){addBalance(-price);addBagItem({...data.item,type:'playerItem',unique:'purchased_'+data.txId});marketStatus.textContent=`${data.item.name}を購入しました`;renderBag();marketState.listings=marketState.listings.filter(x=>x.id!==data.item.id);saveMarket();renderShop();broadcastMarket();}}
+      else if(data.type==='marketState'){if(data.state){marketState=data.state;saveMarket();renderShop();renderAuction();}}
+      else if(data.type==='marketPurchase'){applyMarketPurchase(data);}
+      else if(data.type==='auctionState'){if(data.state){auctionState=data.state;saveAuction();renderAuction();}}
+      else if(data.type==='auctionBid'){applyAuctionBid(data);}
+      else if(data.type==='auctionSold'){applyAuctionSold(data);}
+      else if(data.type==='bagSync'){if(data.to===myPeer?.id&&data.item){addBagItem(data.item);renderBag();}}
+      else if(data.type==='settings'){
+        if(data.settings && typeof data.settings==='object'){
+          gameSettings=Object.assign({},DEFAULT_GAME_SETTINGS,gameSettings,data.settings);
+          try{localStorage.setItem('casino_game_settings_v1',JSON.stringify(gameSettings));}catch(e){}
+          updateBorrowBtn();
+          updateFreeChipButton();
+          updateFreeChipBtn();
+          transferLog.textContent='🛠 管理者からゲーム設定を受信しました';
+        }
+      }
+    });
+
+    conn.on('close',()=>{
+      if(connections.get(conn.peer)===conn) connections.delete(conn.peer);
+      presence.delete(conn.peer);
+      renderOnlinePlayers();
+      if(activeConn===conn) activeConn=connections.values().next().value || null;
+      setConnStatus(activeConn ? `接続中：${activeConn.metadata?.name || '相手'}` : '切断されました');
+    });
+    conn.on('error',()=>{
+      if(connections.get(conn.peer)===conn) connections.delete(conn.peer);
+      presence.delete(conn.peer);
+      renderOnlinePlayers();
+      setConnStatus('接続エラー');
+    });
+  }
+
+  function connectById(peerId,onOpen){
+    const id=String(peerId||'').trim();
+    if(!id){ transferLog.textContent='送金IDを入力してください'; return null; }
+    if(id===myPeer?.id){ transferLog.textContent='自分自身には送金できません'; return null; }
+    if(connections.has(id) && connections.get(id).open){
+      const conn=connections.get(id);
+      if(onOpen) onOpen(conn);
+      return conn;
+    }
+    if(!myPeer){ transferLog.textContent='PeerJSが利用できません'; return null; }
+    const conn=myPeer.connect(id,{metadata:{name:safeName()}});
+    registerConn(conn);
+    if(onOpen) conn.on('open',()=>onOpen(conn));
+    return conn;
+  }
+
+  // Discovered players are periodically contacted so the mesh can learn who is online.
+  function discoverKnownPlayers(){
+    for(const [name,id] of [...knownPlayers.entries()]){
+      if(!id || id===myPeer?.id) continue;
+      const p=presence.get(id);
+      if(p && Date.now()-p.lastSeen<12000) continue;
+      if(connections.has(id)) continue;
+      connectById(id);
+    }
+  }
+
+  const pendingTransfers=new Map();
+  const pendingAdmin=new Map();
+
+  syncStatus('PeerJSで接続中…',true);
+
+  // PeerJSのシグナリングサーバーへ接続して自分のPeer IDを取得する。
+  // ID取得後はプレイヤー同士がWebRTC DataConnectionで直接通信する。
+  if(window.Peer){
+    myPeerId.textContent='PeerJSサーバーへ接続中…';
+    setConnStatus('ネットワーク接続を開始しています…');
+    let peerOpened=false;
+    const peerOpenTimer=setTimeout(()=>{
+      if(!peerOpened){
+        myPeerId.textContent='接続タイムアウト';
+        setConnStatus('PeerJSサーバーに接続できません。インターネット接続・ブラウザの制限を確認してください');
+      }
+    },15000);
+
+    try{
+      myPeer=new Peer(undefined,{
+        host:'0.peerjs.com',
+        port:443,
+        path:'/',
+        secure:true,
+        debug:0
+      });
+      myPeer.on('open',id=>{
+        peerOpened=true;
+        clearTimeout(peerOpenTimer);
+        myPeerId.textContent=id;
+        setConnStatus('ネットワーク接続済み（Peer ID発行済み）');
+        renderOnlinePlayers();
+        broadcastPresence();
+      });
+      myPeer.on('connection',registerConn);
+      myPeer.on('disconnected',()=>{
+        myPeerId.textContent='PeerJSサーバーから切断';
+        setConnStatus('PeerJSサーバーから切断されました。再接続中…');
+        try{ myPeer.reconnect(); }catch(e){}
+      });
+      myPeer.on('close',()=>{
+        myPeerId.textContent='PeerJS接続終了';
+        setConnStatus('PeerJS接続が終了しました');
+      });
+      myPeer.on('error',e=>{
+        clearTimeout(peerOpenTimer);
+        const type=e?.type||'unknown';
+        myPeerId.textContent='接続エラー';        setConnStatus('PeerJSエラー：'+type);
+        console.error('PeerJS error:',e);
+      });
+    }catch(e){
+      clearTimeout(peerOpenTimer);
+      myPeerId.textContent='PeerJS起動失敗';
+      setConnStatus('PeerJSを起動できませんでした');
+      console.error(e);
+    }
+  }else{
+    myPeerId.textContent='PeerJS読込失敗';
+    setConnStatus('PeerJSライブラリを読み込めませんでした');
+  }
+
+  connectPeerBtn.addEventListener('click',()=>{
+    const id=peerNameInput.value.trim();
+    if(!id){setConnStatus('相手の送金IDを入力してください');return;}
+    const conn=connectById(id);
+    if(conn) setConnStatus(`ID「${id}」へ接続中…`);
+  });
+
+  transferBtn.addEventListener('click',()=>{
+    const amount=Math.floor(Number(transferAmountInput.value));
+    const id=peerNameInput.value.trim();
+    if(!id){transferLog.textContent='送金先の送金IDを入力してください';return;}
+    if(!Number.isFinite(amount)||amount<1||amount>save.balance){
+      transferLog.textContent='送金額が不正です'; return;
+    }
+
+    const txId=`money-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const conn=connectById(id,conn=>{
+      if(!conn || !conn.open){transferLog.textContent='相手と接続できません';return;}
+      pendingTransfers.set(txId,{amount,name:conn.metadata?.name||'相手',committed:false});
+      try{
+        conn.send({type:'money',amount,txId,senderName:safeName()});
+        // The sender is charged only after the receiver acknowledges the transaction.
+        setTimeout(()=>{
+          const p=pendingTransfers.get(txId);
+          if(p && !p.committed){
+            pendingTransfers.delete(txId);
+            transferLog.textContent='送金確認がタイムアウトしました。残高は減っていません。';
+          }
+        },8000);
+      }catch(e){
+        pendingTransfers.delete(txId);
+        transferLog.textContent='送金に失敗しました。残高は減っていません。';
+      }
+    });
+    if(!conn) return;
+  });
+
+  function updateFreeChipButton(){
+    const now=Date.now();
+    const interval=Math.max(1,Number(gameSettings.freeChipInterval)||1)*1000;
+    freeChipBtn.disabled=now-save.lastFreeChip<interval;
+    if(freeChipBtn.disabled){
+      const left=Math.ceil((interval-(now-save.lastFreeChip))/1000);
+      freeChipBtn.textContent=`無料チップまで ${left}秒`;
+    }else{
+      freeChipBtn.textContent=`無料チップ +${Number(gameSettings.freeChipAmount||0).toLocaleString()}`;
+    }
+  }
+
+  adminOpenBtn.addEventListener('click',()=>adminPanel.style.display=adminPanel.style.display==='none'?'block':'none');
+
+  adminLoginBtn.addEventListener('click',()=>{
+    if(adminPasswordInput.value===ADMIN_PASSWORD){
+      adminControls.style.display='block';
+      adminStatus.textContent='管理者ログイン成功';
+      document.getElementById('setStartingBalance').value=gameSettings.startingBalance;
+      document.getElementById('setFreeChipAmount').value=gameSettings.freeChipAmount;
+      document.getElementById('setFreeChipInterval').value=gameSettings.freeChipInterval;
+      document.getElementById('setDebtMax').value=gameSettings.debtMax;
+      document.getElementById('setBorrowAmount').value=gameSettings.borrowAmount;
+      document.getElementById('setRepayRatio').value=Number(gameSettings.repayRatio)*100;
+    }else{
+      adminStatus.textContent='パスワードが違います';
+    }
+  });
+
+  document.getElementById('applySettingsBtn').addEventListener('click',()=>{
+    gameSettings={
+      startingBalance:Math.max(0,Math.floor(Number(document.getElementById('setStartingBalance').value)||0)),
+      freeChipAmount:Math.max(0,Math.floor(Number(document.getElementById('setFreeChipAmount').value)||0)),
+      freeChipInterval:Math.max(1,Math.floor(Number(document.getElementById('setFreeChipInterval').value)||1)),
+      debtMax:Math.max(0,Math.floor(Number(document.getElementById('setDebtMax').value)||0)),
+      borrowAmount:Math.max(0,Math.floor(Number(document.getElementById('setBorrowAmount').value)||0)),
+      repayRatio:Math.max(0,Math.min(100,Number(document.getElementById('setRepayRatio').value)||0))/100
+    };
+    try{localStorage.setItem('casino_game_settings_v1',JSON.stringify(gameSettings));}catch(e){}
+    updateBorrowBtn(); updateFreeChipButton(); updateFreeChipBtn();
+
+    let sent=0;
+    for(const conn of connections.values()){
+      if(conn.open){
+        try{conn.send({type:'settings',settings:gameSettings});sent++;}catch(e){}
+      }
+    }
+    adminStatus.textContent=`設定を適用しました。${sent}人の接続中プレイヤーにも同期しました。`;
+  });
+
+  document.getElementById('adminGiveBtn').addEventListener('click',()=>{
+    const id=adminTargetName.value.trim();
+    const amount=Math.floor(Number(adminGiveAmount.value));
+    if(!id){adminStatus.textContent='指定プレイヤーの送金IDを入力してください';return;}
+    if(!Number.isFinite(amount)||amount<1){adminStatus.textContent='与える金額が不正です';return;}
+
+    const txId=`admin-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const sendAdmin=(conn)=>{
+      if(!conn || !conn.open){adminStatus.textContent='指定IDに接続できませんでした';return;}
+      const send=()=>{try{conn.send({type:'adminMoney',amount,txId,senderName:'管理者'});return true;}catch(e){return false;}};
+      if(send()) adminStatus.textContent=`指定プレイヤーへ ${amount.toLocaleString()}チップを配布しました（管理者残高は減りません）`;
+      else adminStatus.textContent='配布に失敗しました';
+    };
+    connectById(id,sendAdmin);
+  });
+
+  async function giveAdminToConnection(conn,amount,existingTxId){
+    if(!conn || !conn.open || !conn.peer) return false;
+    const txId=existingTxId || `admin-all-${Date.now()}-${Math.random().toString(36).slice(2)}-${conn.peer}`;
+    return await new Promise(resolve=>{
+      let finished=false;
+      const finish=(ok)=>{
+        if(finished)return;
+        finished=true;
+        clearTimeout(timeout);
+        pendingAdmin.delete(txId);
+        resolve(ok);
+      };
+      const timeout=setTimeout(()=>finish(false),6500);
+      pendingAdmin.set(txId,{acked:false,resolve:finish});
+      try{
+        conn.send({type:'adminMoney',amount,txId,senderName:'管理者'});
+      }catch(e){finish(false);}
+    });
+  }
+
+  async function deliverAdminMoneyReliably(id,amount){
+    const txId=`admin-all-${Date.now()}-${Math.random().toString(36).slice(2)}-${id}`;
+    for(let attempt=1;attempt<=3;attempt++){
+      let conn=connections.get(id);
+      if(!conn || !conn.open){
+        conn=connectById(id);
+        if(conn && !conn.open){
+          await new Promise(resolve=>{
+            let done=false;
+            const finish=()=>{if(done)return;done=true;clearTimeout(timer);resolve();};
+            const timer=setTimeout(finish,4000);
+            conn.once('open',finish);
+            conn.once('error',finish);
+          });
+        }
+      }
+      if(conn && conn.open){
+        const ok=await giveAdminToConnection(conn,amount,txId);
+        if(ok)return true;
+      }
+      await new Promise(r=>setTimeout(r,350));
+    }
+    return false;
+  }
+
+  adminGiveAllBtn.addEventListener('click',async()=>{
+    const amount=Math.floor(Number(adminGiveAmount.value));
+    if(!Number.isFinite(amount)||amount<1){adminStatus.textContent='配布する金額が不正です';return;}
+    if(!myPeer || !myPeer.id){adminStatus.textContent='ネットワーク接続がまだ完了していません';return;}
+
+    adminGiveAllBtn.disabled=true;
+    adminStatus.textContent='全員配布中…受信確認を待っています';
+    const ids=new Set([...connections.keys()]);
+    for(const id of knownPlayers.values()) if(id && id!==myPeer.id) ids.add(id);
+    const targets=[...ids].filter(id=>id && id!==myPeer.id);
+
+    // The administrator also receives the same amount.
+    addBalance(amount);
+    let success=0;
+    const failed=[];
+    const results=await Promise.all(targets.map(async id=>({id,ok:await deliverAdminMoneyReliably(id,amount)})));
+    for(const r of results){if(r.ok)success++;else failed.push(r.id);}
+
+    adminGiveAllBtn.disabled=false;
+    if(failed.length===0){
+      adminStatus.textContent=`全員配布成功：管理者＋${success}人に ${amount.toLocaleString()}チップ。全員から受信確認済み。`;
+    }else{
+      adminStatus.textContent=`配布結果：管理者＋${success}人は受信確認済み。${failed.length}人は未確認（IDを確認して再実行してください）。`;
+    }
+  });
+
+
+  function broadcastEvent(){for(const c of connections.values())if(c&&c.open)try{c.send({type:'eventState',state:eventState,scores:eventScores})}catch(e){}}
+  function broadcastLottery(includeResult){if(!lotteryState)return;const state={id:lotteryState.id,active:lotteryState.active,finished:lotteryState.finished,startedAt:lotteryState.startedAt,endsAt:lotteryState.endsAt,prize:lotteryState.prize};if(includeResult)state.winningNumber=lotteryState.winningNumber;for(const c of connections.values())if(c&&c.open)try{c.send({type:'lotteryState',state})}catch(e){}}
+  function finishEvent(){if(!eventState||eventState.finished||Date.now()<eventState.endAt)return;eventState.finished=true;eventState.active=false;const finished=eventState;const ranking=Object.entries(eventScores).sort((a,b)=>Number(b[1])-Number(a[1])).slice(0,3), prizes=finished.prizes||[0,0,0];ranking.forEach(([name],i)=>{const id=knownPlayers.get(name), amount=Math.max(0,Math.floor(Number(prizes[i])||0));if(!id||!amount||!myPeer)return;let c=connections.get(id);if(!c||!c.open){c=myPeer.connect(id,{metadata:{name:safeName()}});registerConn(c)}const send=()=>{try{c.send({type:'eventPrize',txId:'event_'+finished.id+'_'+i,name,amount,rank:i+1})}catch(e){}};if(c.open)send();else c.on('open',send)});eventState=null;eventScores={};localStorage.removeItem(EVENT_KEY);localStorage.removeItem(EVENT_SCORE_KEY);broadcastEvent();renderGlobalEvent();adminStatus.textContent='イベント終了。トップ3への配金処理を実行しました。'}
+  eventStartBtn.addEventListener('click',()=>{const s=new Date(eventStartInput.value).getTime(),e=new Date(eventEndInput.value).getTime();if(!Number.isFinite(s)||!Number.isFinite(e)||e<=s){adminStatus.textContent='開始・終了日時が不正です';return}eventState={id:'event_'+Date.now(),name:eventNameInput.value.trim()||'イベント',startAt:s,endAt:e,multiplier:Math.max(1,Number(eventMultiplierInput.value)||1),prizes:[Math.max(0,Math.floor(Number(eventPrize1Input.value)||0)),Math.max(0,Math.floor(Number(eventPrize2Input.value)||0)),Math.max(0,Math.floor(Number(eventPrize3Input.value)||0))],active:true,finished:false};eventScores={};localStorage.setItem(EVENT_KEY,JSON.stringify(eventState));localStorage.setItem(EVENT_SCORE_KEY,'{}');broadcastEvent();adminStatus.textContent='イベントを設定して全員へ同期しました'});
+  eventEndBtn.addEventListener('click',()=>{if(!eventState){adminStatus.textContent='イベントがありません';return}eventState.endAt=Math.min(eventState.endAt,Date.now());finishEvent()});
+  lotteryStartBtn.addEventListener('click',()=>{const prize=Math.max(0,Math.floor(Number(lotteryPrizeInput.value)||0));lotteryState={id:'lottery_'+Date.now(),active:true,finished:false,startedAt:Date.now(),endsAt:Date.now()+300000,prize,winningNumber:1+Math.floor(Math.random()*20),choice:null};localStorage.setItem(LOTTERY_KEY,JSON.stringify(lotteryState));renderLottery();broadcastLottery(false);adminStatus.textContent='宝くじを開始しました（5分）'});
+  setInterval(()=>{if(eventState&&!eventState.finished&&Date.now()>=eventState.endAt)finishEvent()},1000);
+
+  adminResetBalanceBtn.addEventListener('click',()=>{
+    save.balance=Number(gameSettings.startingBalance)||0;
+    save.debt=0;
+    renderBalance(); renderDebt(); writeSave();
+    adminStatus.textContent='自分の残高を初期チップに戻しました';
+  });
+
+  updateFreeChipButton();
+  renderOnlinePlayers();
+  setInterval(updateFreeChipButton,1000);
+  setInterval(()=>{
+    // heartbeat
+    for(const conn of connections.values()){
+      if(conn.open){
+        try{conn.send({type:'ping',ts:Date.now()});}catch(e){}
+      }
+    }
+    discoverKnownPlayers();
+    broadcastPresence();
+    renderOnlinePlayers();
+  },4000);
+
+  // ================= SHOP / MARKET / AUCTION =================
+  const SHOP_KEY='casino_shop_state_v1', BAG_KEY='casino_bag_v1', AUCTION_KEY='casino_auction_state_v1';
+  const bannedMarketWords=['性器','陰茎','膣','ちんこ','チンコ','まんこ','マンコ','おっぱい','乳首','射精','精子','精液','セックス','SEX','エロ','えろ','裸','ヌード','フェラ','クンニ','オナニー','自慰','レイプ','強姦'];
+  function containsBannedName(name){const x=String(name||'').toLowerCase().replace(/[\s　]/g,'');return bannedMarketWords.some(w=>x.includes(w.toLowerCase()));}
+  function readJson(k,d){try{return JSON.parse(localStorage.getItem(k)||'null')??d}catch(e){return d}}
+  function makeTotems(){const names=['月影のトーテム','黄金のトーテム','蒼天のトーテム','深海のトーテム','炎獣のトーテム','雷鳴のトーテム','星砂のトーテム','森羅のトーテム','白銀のトーテム','黒曜のトーテム','紅蓮のトーテム','翡翠のトーテム','琥珀のトーテム','天空のトーテム','大地のトーテム','霧夜のトーテム','太陽のトーテム','月光のトーテム','流星のトーテム','虹彩のトーテム','幻影のトーテム','古代のトーテム','深紅のトーテム','青晶のトーテム','翠玉のトーテム','紫電のトーテム','白炎のトーテム','黒雷のトーテム','砂漠のトーテム','氷河のトーテム','海王のトーテム','山神のトーテム','森王のトーテム','夜空のトーテム','朝焼けのトーテム','夕闇のトーテム','銀河のトーテム','彗星のトーテム','時空のトーテム','夢幻のトーテム','神秘のトーテム','王冠のトーテム','龍脈のトーテム','聖域のトーテム','魔導のトーテム','幸運のトーテム','勝利のトーテム','極光のトーテム','無限のトーテム','終焉のトーテム'];return names.map((name,i)=>({id:'totem_'+(i+1),name,price:Math.floor(1000*Math.pow(1.22,i)),emoji:['🗿','🔱','💎','🌙','☀️'][i%5]}))}
+  function defaultMarket(){return {totems:makeTotems(),special:[{id:'gambler_certificate',name:'ギャンブラー証明書',price:1000000,stock:1,limit:1,emoji:'🎫',desc:'所持中は低確率で払い戻しが2倍'},{id:'upper_gambler_certificate',name:'上流ギャンブラー証明書',price:1000000000,stock:1,limit:1,emoji:'👑',desc:'所持中は極低確率で払い戻しが3.5倍'}],listings:[]}}
+  let marketState=readJson(SHOP_KEY,null);if(!marketState||!Array.isArray(marketState.totems)||marketState.totems.length!==50)marketState=defaultMarket();if(!Array.isArray(marketState.listings))marketState.listings=[];
+  let auctionState=readJson(AUCTION_KEY,[]);if(!Array.isArray(auctionState))auctionState=[];
+  function getBag(){const b=readJson(BAG_KEY,[]);return Array.isArray(b)?b:[]}
+  function saveBag(b){try{localStorage.setItem(BAG_KEY,JSON.stringify(b))}catch(e){}}
+  function addBagItem(item){const b=getBag();if(item&&item.unique&&b.some(x=>x.unique===item.unique))return false;b.push(item);saveBag(b);return true}
+  function saveMarket(){try{localStorage.setItem(SHOP_KEY,JSON.stringify(marketState))}catch(e){}}
+  function saveAuction(){try{localStorage.setItem(AUCTION_KEY,JSON.stringify(auctionState))}catch(e){}}
+  function mediaHtml(item){if(!item)return '';if(item.url)return `<a href="${esc(item.url)}" target="_blank" rel="noopener" style="color:#8fd3ff;">🔗 URLを開く</a>`;if(item.fileData){if(item.fileType?.startsWith('image/'))return `<img src="${item.fileData}" style="max-width:100%;max-height:180px;border-radius:7px;margin-top:5px;object-fit:contain;">`;if(item.fileType?.startsWith('audio/'))return `<audio controls src="${item.fileData}" style="width:100%;margin-top:5px;"></audio>`;if(item.fileType?.startsWith('video/'))return `<video controls src="${item.fileData}" style="width:100%;max-height:220px;margin-top:5px;"></video>`;}return '';}
+  function card(item,buttonText,onClick){const d=document.createElement('div');d.style.cssText='padding:9px;border:1px solid var(--line);border-radius:8px;background:#0f141b;';d.innerHTML=`<div style="font-weight:bold;">${esc(item.emoji||'📦')} ${esc(item.name)}</div><div style="font-size:10px;color:var(--dim);margin:3px 0;">${Number(item.price||0).toLocaleString()}チップ${item.seller?' / 出品者：'+esc(item.seller):''}</div>${item.desc?`<div style="font-size:10px;color:var(--dim);">${esc(item.desc)}</div>`:''}${mediaHtml(item)}${buttonText?'<button style="width:100%;margin-top:7px;padding:7px;border-radius:6px;border:1px solid var(--gold);background:#2a2413;color:#ffe9a3;cursor:pointer;">'+esc(buttonText)+'</button>':''}`;if(buttonText)d.querySelector('button').onclick=onClick;return d}
+  function broadcastMarket(){for(const c of connections.values())if(c&&c.open)try{c.send({type:'marketState',state:marketState})}catch(e){}}
+  function broadcastAuction(){for(const c of connections.values())if(c&&c.open)try{c.send({type:'auctionState',state:auctionState})}catch(e){}}
+  function buyShopItem(id){const special=marketState.special.find(x=>x.id===id),totem=marketState.totems.find(x=>x.id===id);const item=special||totem;if(!item)return;const price=Number(item.price)||0;if(save.balance<price){marketStatus.textContent='チップが足りません';return}if(special&&item.stock<=0){marketStatus.textContent='売り切れです';return}const bag=getBag();if(special&&bag.some(x=>x.type==='special'&&x.itemId===id)){marketStatus.textContent='このアイテムは1人1個までです';return}if(special){item.stock--;item.soldTo=myPeer?.id||''}else{item.stock=item.stock??1;if(item.stock<=0){marketStatus.textContent='売り切れです';return}item.stock=0}addBalance(-price);addBagItem({type:special?'special':'totem',itemId:item.id,name:item.name,emoji:item.emoji,desc:item.desc,unique:(special?'special_':'totem_')+item.id});saveMarket();renderShop();broadcastMarket();marketStatus.textContent=`${item.name}を購入しました。バッグを確認してね！`}
+  function buyPlayerListing(id){const item=marketState.listings.find(x=>x.id===id);if(!item)return;if(item.sellerId===myPeer?.id){marketStatus.textContent='自分の出品物は買えません';return}if(save.balance<item.price){marketStatus.textContent='チップが足りません';return}const seller=connections.get(item.sellerId);if(!seller||!seller.open){marketStatus.textContent='出品者がオンラインではありません';return}const txId='marketbuy_'+Date.now()+'_'+Math.random().toString(36).slice(2);try{seller.send({type:'marketBuyRequest',txId,listingId:id,buyerId:myPeer.id,buyerName:safeName()});marketStatus.textContent='出品者へ購入要求を送信しました…'}catch(e){marketStatus.textContent='購入要求に失敗しました'}}
+  function applyMarketPurchase(data){if(!data||!data.listingId)return;const i=marketState.listings.findIndex(x=>x.id===data.listingId);if(i<0)return;const item=marketState.listings[i];if(item.sellerId===myPeer?.id){addBalance(Number(data.price)||item.price);marketState.listings.splice(i,1);saveMarket();renderShop();try{const c=connections.get(data.buyerId);c?.send({type:'marketPurchaseConfirm',txId:data.txId,item,price:item.price})}catch(e){}broadcastMarket()}}
+  function renderShop(){const a=document.getElementById('totemShopList'),b=document.getElementById('specialShopList'),c=document.getElementById('playerShopList');if(!a)return;a.innerHTML='';marketState.totems.forEach(x=>{a.appendChild(card(x,x.stock===0?'売り切れ':`購入 ${Number(x.price).toLocaleString()}`,()=>buyShopItem(x.id))) ;if(x.stock===0)a.lastChild.querySelector('button').disabled=true});b.innerHTML='';marketState.special.forEach(x=>{const owned=getBag().some(i=>i.itemId===x.id);b.appendChild(card(x,(x.stock<=0||owned)?'売り切れ':'購入',()=>buyShopItem(x.id)));if(x.stock<=0||owned)b.lastChild.querySelector('button').disabled=true});c.innerHTML='';if(!marketState.listings.length)c.innerHTML='<div class="sub">現在プレイヤー出品はありません。</div>';marketState.listings.forEach(x=>c.appendChild(card(x,'購入',()=>buyPlayerListing(x.id))))}
+  function readFileAsDataURL(file){return new Promise((resolve,reject)=>{if(!file)return resolve(null);if(file.size>25*1024*1024)return reject(new Error('25MBを超えるファイルは出品できません'));const r=new FileReader();r.onload=()=>resolve({fileData:r.result,fileType:file.type,fileName:file.name});r.onerror=reject;r.readAsDataURL(file)})}
+  async function createListing(kind){const name=(kind==='shop'?marketNameInput:auctionNameInput).value.trim(),price=Math.floor(Number((kind==='shop'?marketPriceInput:auctionStartPriceInput).value)||0),url=(kind==='shop'?marketUrlInput:auctionUrlInput).value.trim(),file=await readFileAsDataURL((kind==='shop'?marketFileInput:auctionFileInput).files[0]);if(!name||containsBannedName(name)){(kind==='shop'?marketStatus:auctionStatus).textContent='その名前は出品できません';return}if(!price||price<1){(kind==='shop'?marketStatus:auctionStatus).textContent='価格が不正です';return}if(url&&!/^https?:\/\//i.test(url)){(kind==='shop'?marketStatus:auctionStatus).textContent='URLは http:// または https:// から始めてください';return}const item={id:(kind==='shop'?'listing_':'auction_')+Date.now()+'_'+Math.random().toString(36).slice(2),name,price,url,fileData:file?.fileData||null,fileType:file?.fileType||'',fileName:file?.fileName||'',seller:safeName(),sellerId:myPeer?.id||'',emoji:'📦'};if(kind==='shop'){marketState.listings.push(item);saveMarket();broadcastMarket();renderShop();marketStatus.textContent='出品しました！'}else{item.startPrice=price;item.highestBid=0;item.highestBidderId='';item.highestBidderName='';item.endsAt=new Date(auctionEndInput.value).getTime();if(!Number.isFinite(item.endsAt)||item.endsAt<=Date.now()){auctionStatus.textContent='終了日時が不正です';return}auctionState.push(item);saveAuction();broadcastAuction();renderAuction();auctionStatus.textContent='オークションに出品しました！'}}
+  function applyAuctionBid(data){const a=auctionState.find(x=>x.id===data.auctionId);if(!a||Date.now()>=a.endsAt)return;if(Number(data.amount)<=Math.max(Number(a.startPrice)||0,Number(a.highestBid)||0))return;a.highestBid=Number(data.amount);a.highestBidderId=data.bidderId;a.highestBidderName=data.bidderName;saveAuction();renderAuction();broadcastAuction()}
+  function bidAuction(a){const amount=Math.floor(Number(prompt('入札額を入力',String(Math.max(a.startPrice,a.highestBid+1))))||0);if(amount<=Math.max(a.startPrice,a.highestBid)||amount>save.balance){auctionStatus.textContent='入札額が不正です';return}for(const c of connections.values())if(c&&c.open)try{c.send({type:'auctionBid',auctionId:a.id,amount,bidderId:myPeer.id,bidderName:safeName()})}catch(e){}applyAuctionBid({auctionId:a.id,amount,bidderId:myPeer.id,bidderName:safeName()});auctionStatus.textContent='入札しました'}
+  function settleAuctions(){auctionState.slice().forEach(a=>{if(a.settled||Date.now()<a.endsAt)return;if(a.highestBidderId){if(a.highestBidderId===myPeer?.id&&save.balance>=a.highestBid){addBalance(-a.highestBid);addBagItem({...a,type:'auctionItem',unique:'auction_'+a.id});}if(a.sellerId===myPeer?.id)addBalance(a.highestBid);a.settled=true}else a.settled=true});saveAuction();renderAuction()}
+  function applyAuctionSold(data){settleAuctions()}
+  function renderAuction(){const box=document.getElementById('auctionList');if(!box)return;box.innerHTML='';if(!auctionState.length){box.innerHTML='<div class="sub">現在オークションはありません。</div>';return}auctionState.forEach(a=>{const expired=Date.now()>=a.endsAt;const label=expired?'終了':`入札 ${Math.max(a.startPrice,a.highestBid||0).toLocaleString()}`;const d=card({...a,price:Math.max(a.startPrice,a.highestBid||0),desc:`終了：${new Date(a.endsAt).toLocaleString('ja-JP')} / 最高入札：${a.highestBidderName||'なし'}`},expired?'終了':(a.sellerId===myPeer?.id?'自分の出品':'入札'),()=>{if(!expired&&a.sellerId!==myPeer?.id)bidAuction(a)});box.appendChild(d)})}
+  function renderBag(){const box=document.getElementById('bagList');if(!box)return;box.innerHTML='';const b=getBag();if(!b.length){box.innerHTML='<div class="sub">バッグは空です。</div>';return}b.forEach(item=>{const d=document.createElement('div');d.style.cssText='padding:9px;border:1px solid var(--line);border-radius:8px;background:#0f141b;';d.innerHTML=`<div style="font-weight:bold;">${esc(item.emoji||'📦')} ${esc(item.name)}</div><div style="font-size:10px;color:var(--dim);">${esc(item.desc||'')}</div>${mediaHtml(item)}`;if(item.url&&!item.fileData)d.innerHTML+=`<div style="margin-top:5px;">${mediaHtml(item)}</div>`;box.appendChild(d)})}
+  const totemShopList=document.getElementById('totemShopList'),specialShopList=document.getElementById('specialShopList'),playerShopList=document.getElementById('playerShopList');
+  const marketNameInput=document.getElementById('marketNameInput'),marketPriceInput=document.getElementById('marketPriceInput'),marketUrlInput=document.getElementById('marketUrlInput'),marketFileInput=document.getElementById('marketFileInput'),marketListBtn=document.getElementById('marketListBtn'),marketStatus=document.getElementById('marketStatus');
+  const auctionNameInput=document.getElementById('auctionNameInput'),auctionStartPriceInput=document.getElementById('auctionStartPriceInput'),auctionEndInput=document.getElementById('auctionEndInput'),auctionUrlInput=document.getElementById('auctionUrlInput'),auctionFileInput=document.getElementById('auctionFileInput'),auctionListBtn=document.getElementById('auctionListBtn'),auctionStatus=document.getElementById('auctionStatus');
+  marketListBtn.addEventListener('click',()=>createListing('shop').catch(e=>marketStatus.textContent=e.message));auctionListBtn.addEventListener('click',()=>createListing('auction').catch(e=>auctionStatus.textContent=e.message));
+  renderShop();renderAuction();renderBag();setInterval(()=>{settleAuctions();renderAuction()},1000);
+
+  // ================= KEIBA =================
+  const HORSES = [
+    {name:'サクラ', emoji:'🐎'}, {name:'ムーン', emoji:'🐎'}, {name:'ハヤテ', emoji:'🐎'},
+    {name:'スター', emoji:'🐎'}, {name:'クロノ', emoji:'🐎'}, {name:'ミライ', emoji:'🐎'}
+  ];
+  const horseChoices = document.getElementById('horseChoices');
+  const horseStartBtn = document.getElementById('horseStartBtn');
+  const horseResult = document.getElementById('horseResult');
+  const horseRaceStatus = document.getElementById('horseRaceStatus');
+  const horseEls = HORSES.map((_,i)=>document.getElementById('horse'+i));
+  let selectedHorse = null;
+  let horseRacing = false;
+
+  HORSES.forEach((h,i)=>{
+    const b=document.createElement('button');
+    b.className='horseChoice';
+    b.textContent=(i+1)+'番 '+h.name;
+    b.addEventListener('click',()=>{
+      if(horseRacing)return;
+      selectedHorse=i;
+      horseChoices.querySelectorAll('.horseChoice').forEach((x,j)=>x.classList.toggle('selected',j===i));
+      horseRaceStatus.textContent='選択中：'+(i+1)+'番 '+h.name;
+    });
+    horseChoices.appendChild(b);
+  });
+
+  function resetHorses(){ horseEls.forEach(el=>el.style.transform='translateX(0px)'); }
+
+  horseStartBtn.addEventListener('click',()=>{
+    if(horseRacing)return;
+    if(selectedHorse===null){horseRaceStatus.textContent='先に賭ける馬を選んでください';return;}
+    const bet=clampBetInput(horseBetInput);
+    if(bet>save.balance || bet<10){horseRaceStatus.textContent='賭け金が不正です';return;}
+    horseRacing=true; horseStartBtn.disabled=true;
+    addBalance(-bet); resetHorses(); horseResult.textContent=''; horseRaceStatus.textContent='レース開始！';
+    const positions=new Array(HORSES.length).fill(0);
+    const finishOrder=[];
+    const strengths=HORSES.map(()=>0.82+Math.random()*0.34);
+    const start=performance.now();
+    const trackWidth=document.querySelector('.horseLane').clientWidth-52;
+    function frame(now){
+      const elapsed=(now-start)/1000;
+      for(let i=0;i<HORSES.length;i++){
+        if(finishOrder.includes(i)) continue;
+        const wobble=0.94+Math.random()*0.12;
+        positions[i]+=strengths[i]*wobble*trackWidth/7.5*0.016;
+        if(positions[i]>=trackWidth){positions[i]=trackWidth; finishOrder.push(i);}
+        horseEls[i].style.transform='translateX('+positions[i]+'px)';
+      }
+      horseRaceStatus.textContent='レース中… '+Math.min(100,Math.floor((Math.max(...positions)/trackWidth)*100))+'%';
+      if(finishOrder.length<HORSES.length && elapsed<15){ requestAnimationFrame(frame); return; }
+      // Ensure every horse gets a final order if timer hits the safety limit.
+      const rest=HORSES.map((_,i)=>i).filter(i=>!finishOrder.includes(i)).sort((a,b)=>positions[b]-positions[a]);
+      finishOrder.push(...rest);
+      const winner=finishOrder[0];
+      const rank=finishOrder.indexOf(selectedHorse)+1;
+      const names=finishOrder.map((i,r)=>(r+1)+'位 '+HORSES[i].name).join(' / ');
+      if(winner===selectedHorse){
+        const payout=bet*4;
+        const finalPayout=eventPayout(payout); addBalance(finalPayout);
+        horseResult.textContent='🏆 的中！ '+HORSES[winner].name+' が1位！ '+payout.toLocaleString()+'チップ払い戻し';
+      }else{
+        horseResult.textContent='💨 ハズレ！ '+HORSES[winner].name+' が1位。あなたの馬は'+rank+'位';
+      }
+      horseRaceStatus.textContent=names;
+      horseRacing=false; horseStartBtn.disabled=false;
+    }
+    requestAnimationFrame(frame);
+  });
+
+  // Mobile/network stability: reconnect after background/online transitions and keep keyboard focus visible.
+  function reconnectPeerStable(){
+    try{
+      if(myPeer && myPeer.disconnected) myPeer.reconnect();
+      else if(!myPeer && window.Peer) location.reload();
+    }catch(e){}
+  }
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden){ reconnectPeerStable(); setTimeout(()=>{try{broadcastPresence();discoverKnownPlayers();}catch(e){}},800); }
+  });
+  window.addEventListener('online',()=>{
+    try{syncStatus('インターネット接続復帰：再接続中…',true);}catch(e){}
+    reconnectPeerStable();
+    setTimeout(()=>{try{broadcastPresence();discoverKnownPlayers();}catch(e){}},800);
+  });
+  window.addEventListener('offline',()=>{try{syncStatus('オフライン：ネット接続待機中…',false);}catch(e){}});
+  document.addEventListener('focusin',e=>{
+    const t=e.target;
+    if(t && /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)){
+      setTimeout(()=>{try{t.scrollIntoView({block:'center',behavior:'smooth'});}catch(_){ }},250);
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
